@@ -32,7 +32,8 @@ Local-first: no backend, no account, no AI, no network calls. The whole thing is
 | Theme toggle | header button, light by default, saved locally |
 
 Explicitly **not** built: backend, sync, AI, dashboard, team sharing, Firefox/Safari.
-See `spec.md` §7 and §13 for why — and `docs` below for the roadmap.
+The MVP is deliberately three features so the core loop can be validated before
+anything with a server bill gets written.
 
 ## Layout
 
@@ -49,10 +50,10 @@ tools/
   shot.sh             headless screenshots of the UI
   preview.html        design harness — real CSS, mock content
   pack.sh             builds dist/sift-extension-v<version>.zip
-spec.md               product spec (MVP scope, data model, roadmap)
-spec.html             rendered spec
-browser-context-manager-summary.md   earlier product exploration
 ```
+
+Product strategy notes (spec, ICP, pricing, roadmap) are kept locally in `notes/`,
+which is git-ignored — this repo is the code.
 
 ## Run it
 
