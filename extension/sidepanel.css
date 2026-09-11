@@ -436,6 +436,91 @@ button.delete:hover:not(:disabled) {
   text-align: left;
 }
 
+/* ---------- tab picker (new project and add-to-project share it) ---------- */
+
+.picker {
+  border: 2px solid var(--ink);
+  background: var(--surface);
+}
+
+.picker-head {
+  display: flex;
+  align-items: center;
+  gap: var(--gap-tight);
+  padding: 5px 6px;
+  border-bottom: 2px solid var(--ink);
+}
+
+.picker-count {
+  flex: 1;
+  font-size: var(--fs-micro);
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  color: var(--muted);
+}
+
+.picker-mini {
+  padding: 2px 6px;
+  font-size: var(--fs-micro);
+  box-shadow: none;
+}
+
+.picker-list {
+  max-height: 190px;
+  overflow-y: auto;
+}
+
+.picker-row {
+  display: flex;
+  align-items: center;
+  gap: var(--gap-tight);
+  padding: 5px 6px;
+  font-size: var(--fs-row);
+  font-weight: 500;
+  /* the picker sits inside .field, whose label styling must not leak in */
+  text-transform: none;
+  letter-spacing: 0;
+  cursor: pointer;
+}
+
+.picker-row:hover {
+  background: color-mix(in srgb, var(--primary) 45%, var(--surface));
+}
+
+/* drawn by hand: the native checkbox ignores the palette and looks foreign here */
+.picker-row input {
+  appearance: none;
+  flex: none;
+  width: 15px;
+  height: 15px;
+  margin: 0;
+  border: 2px solid var(--ink);
+  background: var(--surface);
+  cursor: pointer;
+}
+
+.picker-row input:checked {
+  background: var(--primary);
+}
+
+.picker-row input:focus-visible {
+  outline: 3px solid var(--focus);
+  outline-offset: 1px;
+}
+
+.picker-row img {
+  flex: none;
+  width: 14px;
+  height: 14px;
+  border: 1px solid var(--ink);
+}
+
+.picker-row span {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
 .card-body {
   display: flex;
   flex-direction: column;

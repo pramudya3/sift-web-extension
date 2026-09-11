@@ -8,6 +8,7 @@ import {
   groupByDomain,
   planGroups,
   mergeTabs,
+  defaultPick,
   tabFromChrome,
   formatAgo,
 } from '../lib/store.js';
@@ -75,5 +76,16 @@ assert.deepEqual(merged.tabs.map((t) => t.url), ['https://a.com/1', 'https://b.c
 assert.equal(merged.added, 1);
 assert.equal(merged.skipped, 3);
 assert.equal(mergeTabs([], []).added, 0);
+
+// defaultPick: pinned tabs are left out unless the user deliberately selected them
+const window1 = [
+  { id: 1, pinned: true },
+  { id: 2, pinned: false },
+  { id: 3, pinned: false },
+];
+assert.deepEqual([...defaultPick(window1)], [2, 3]);
+assert.deepEqual([...defaultPick(window1, [1, 3])], [1, 3], 'explicit multi-select wins');
+assert.deepEqual([...defaultPick(window1, [3])], [2, 3], 'one tab is just the active tab');
+assert.deepEqual([...defaultPick(window1, [99])], [2, 3], 'unknown ids ignored');
 
 console.log('store.js ok');

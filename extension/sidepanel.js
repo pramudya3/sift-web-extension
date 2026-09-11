@@ -8,6 +8,7 @@ import {
   groupByDomain,
   planGroups,
   mergeTabs,
+  defaultPick,
   formatAgo,
   domainOf,
   loadSettings,
@@ -18,7 +19,9 @@ const $ = (id) => document.getElementById(id);
 
 let projects = [];
 let settings = { groupByDomain: false, theme: 'light' };
-let candidate = null; // chrome tabs captured for the pending save
+let candidate = null; // chrome tabs offered by the save form's picker
+let pickedIds = new Set(); // which of them are checked
+let addPicker = null; // { projectId, tabs, picked } while adding to a saved project
 let selectionCount = 0; // how many tabs are multi-selected in this window (0 = none)
 let liveTabCount = 0; // siftable tabs in this window (for the "add tabs" label)
 let confirmDeleteId = null;
@@ -144,20 +147,78 @@ function scheduleRefresh() {
 }
 
 async function beginSave() {
-  const tabs = await tabsToCapture();
+  const tabs = await siftableTabs();
   if (!tabs.length) return;
 
   candidate = tabs;
+  pickedIds = defaultPick(tabs, (await selectedSiftableTabs()).map((t) => t.id));
+
   $('save-btn').hidden = true;
   $('save-form').hidden = false;
   $('project-name').value = suggestName(tabs.map((t) => tabFromChrome(t)));
-  $('save-close').textContent = `Save + close ${tabs.length} tabs`;
+  $('save-tabs-label').textContent = `Tabs to keep (${tabs.length})`;
+  renderPicker($('save-tabs'), tabs, pickedIds, updateSaveLabels);
+  updateSaveLabels();
   $('project-name').focus();
   $('project-name').select();
 }
 
+function updateSaveLabels() {
+  $('save-close').textContent = `Save + close ${pickedIds.size} tabs`;
+  $('save-close').disabled = pickedIds.size === 0;
+}
+
+/* ---------- tab picker (shared by "new project" and "add to project") ---------- */
+
+function renderPicker(container, tabs, picked, onChange) {
+  container.textContent = '';
+
+  const count = el('span', {
+    className: 'picker-count',
+    textContent: `${picked.size} of ${tabs.length} selected`,
+  });
+  const head = el('div', { className: 'picker-head' });
+  const all = el('button', { className: 'picker-mini', type: 'button', textContent: 'All' });
+  const none = el('button', { className: 'picker-mini', type: 'button', textContent: 'None' });
+  head.append(count, all, none);
+
+  const list = el('div', { className: 'picker-list' });
+  for (const tab of tabs) {
+    const box = el('input', { type: 'checkbox', checked: picked.has(tab.id) });
+    box.addEventListener('change', () => {
+      if (box.checked) picked.add(tab.id);
+      else picked.delete(tab.id);
+      count.textContent = `${picked.size} of ${tabs.length} selected`;
+      onChange?.();
+    });
+
+    const row = el('label', { className: 'picker-row' });
+    row.append(
+      box,
+      el('img', { src: faviconUrl(tab.url ?? tab.pendingUrl ?? ''), alt: '', loading: 'lazy' }),
+      el('span', { textContent: tab.title || tab.url }),
+    );
+    list.append(row);
+  }
+
+  all.addEventListener('click', () => {
+    tabs.forEach((t) => picked.add(t.id));
+    renderPicker(container, tabs, picked, onChange);
+    onChange?.();
+  });
+  none.addEventListener('click', () => {
+    picked.clear();
+    renderPicker(container, tabs, picked, onChange);
+    onChange?.();
+  });
+
+  container.append(head, list);
+}
+
 function cancelSave() {
   candidate = null;
+  pickedIds = new Set();
+  $('save-tabs').textContent = '';
   $('save-form').hidden = true;
   $('save-btn').hidden = false;
   $('after-save').hidden = true;
@@ -183,8 +244,14 @@ async function captureTabs(chromeTabs) {
 async function commitSave(closeTabs) {
   if (!candidate) return;
 
-  const tabs = await captureTabs(candidate);
-  const ids = candidate.map((t) => t.id);
+  const chosen = candidate.filter((t) => pickedIds.has(t.id));
+  if (!chosen.length) {
+    status('Pick at least one tab to save.');
+    return;
+  }
+
+  const tabs = await captureTabs(chosen);
+  const ids = chosen.map((t) => t.id);
   const name = $('project-name').value.trim() || suggestName(tabs);
 
   projects = [
@@ -283,15 +350,39 @@ function projectCard(project) {
 
   if (expanded.has(project.id)) {
     const body = el('div', { className: 'card-body' });
-    body.append(
-      el('button', {
-        className: 'small card-add',
-        textContent: selectionCount
-          ? `Add ${selectionCount} selected tabs`
-          : `Add tabs from this window (${liveTabCount})`,
-        dataset: { action: 'add', id: project.id },
-      }),
-    );
+
+    if (addPicker?.projectId === project.id) {
+      const confirm = el('button', {
+        className: 'primary small',
+        textContent: `Add ${addPicker.picked.size}`,
+        dataset: { action: 'add-confirm', id: project.id },
+      });
+      const actions = el('div', { className: 'row' });
+      actions.append(
+        confirm,
+        el('button', {
+          className: 'small',
+          textContent: 'Cancel',
+          dataset: { action: 'add-cancel', id: project.id },
+        }),
+      );
+
+      const picker = el('div', { className: 'picker' });
+      renderPicker(picker, addPicker.tabs, addPicker.picked, () => {
+        confirm.textContent = `Add ${addPicker.picked.size}`;
+      });
+      body.append(picker, actions);
+    } else {
+      body.append(
+        el('button', {
+          className: 'small card-add',
+          textContent: selectionCount
+            ? `Add ${selectionCount} selected tabs`
+            : `Add tabs from this window (${liveTabCount} open)`,
+          dataset: { action: 'add', id: project.id },
+        }),
+      );
+    }
     for (const group of groupByDomain(project.tabs)) {
       const section = el('div', { className: 'domain-group' });
       section.append(
@@ -383,22 +474,46 @@ async function onProjectClick(event) {
     const project = projects.find((p) => p.id === id);
     if (!project) return;
 
-    const incoming = await captureTabs(await tabsToCapture());
-    const merged = mergeTabs(project.tabs, incoming);
-    if (!merged.added) {
-      status('Every one of those tabs is already in this project.');
+    const saved = new Set(project.tabs.map((t) => t.url));
+    const fresh = (await siftableTabs()).filter((t) => !saved.has(t.url));
+    if (!fresh.length) {
+      status('Every open tab is already in this project.');
       return;
     }
 
+    addPicker = {
+      projectId: project.id,
+      tabs: fresh,
+      picked: defaultPick(fresh, (await selectedSiftableTabs()).map((t) => t.id)),
+    };
+    expanded.add(project.id);
+    renderProjects();
+    return;
+  }
+
+  if (action === 'add-cancel') {
+    addPicker = null;
+    renderProjects();
+    return;
+  }
+
+  if (action === 'add-confirm') {
+    const project = projects.find((p) => p.id === id);
+    if (!project || addPicker?.projectId !== id) return;
+
+    const chosen = addPicker.tabs.filter((t) => addPicker.picked.has(t.id));
+    if (!chosen.length) {
+      status('Pick at least one tab to add.');
+      return;
+    }
+
+    const merged = mergeTabs(project.tabs, await captureTabs(chosen));
     project.tabs = merged.tabs;
     project.lastActiveAt = Date.now();
+    addPicker = null;
     await saveProjects(projects);
-    expanded.add(project.id);
     render();
-    status(
-      `Added ${merged.added} tab${merged.added === 1 ? '' : 's'}` +
-        (merged.skipped ? `, skipped ${merged.skipped} already saved.` : '.'),
-    );
+    status(`Added ${merged.added} tab${merged.added === 1 ? '' : 's'} to “${project.name}”.`);
     return;
   }
 

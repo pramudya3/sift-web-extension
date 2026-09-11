@@ -80,6 +80,15 @@ export function groupByDomain(tabs, order = 'size') {
     : list.sort((a, b) => b.tabs.length - a.tabs.length || a.domain.localeCompare(b.domain));
 }
 
+// Default selection for the tab picker: honour an explicit multi-select in the tab
+// strip, otherwise take everything that is not pinned (pinned tabs are usually
+// permanent tools, not the research being captured). Pure and testable.
+export function defaultPick(tabs, selectedIds = []) {
+  const deliberate = selectedIds.filter((id) => tabs.some((t) => t.id === id));
+  if (deliberate.length > 1) return new Set(deliberate);
+  return new Set(tabs.filter((t) => !t.pinned).map((t) => t.id));
+}
+
 // Add tabs to a project, skipping urls it already holds. Pure: no chrome api, no dom.
 export function mergeTabs(existing, incoming) {
   const seen = new Set(existing.map((t) => t.url));

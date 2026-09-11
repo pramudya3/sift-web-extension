@@ -27,7 +27,7 @@
   </head>
   <body>
     <header class="head">
-      <h1>Sift <span class="ver">v0.12.0</span></h1>
+      <h1>Sift <span class="ver">v0.13.0</span></h1>
       <button class="theme" type="button">☾</button>
     </header>
 
@@ -38,8 +38,26 @@
           <span>Project name</span>
           <input type="text" value="Stripe research" />
         </label>
+        <div class="field">
+          <span>Tabs to keep (23)</span>
+          <div class="picker">
+            <div class="picker-head">
+              <span class="picker-count">19 of 23 selected</span>
+              <button class="picker-mini">All</button>
+              <button class="picker-mini">None</button>
+            </div>
+            <div class="picker-list">
+              <label class="picker-row"><input type="checkbox" checked /><img alt="" /><span>API reference – Stripe Documentation</span></label>
+              <label class="picker-row"><input type="checkbox" checked /><img alt="" /><span>Pricing &amp; fees for Indonesia</span></label>
+              <label class="picker-row"><input type="checkbox" /><img alt="" /><span>Gmail – Inbox (pinned, left out by default)</span></label>
+              <label class="picker-row"><input type="checkbox" /><img alt="" /><span>Calendar – Week of Sep 8</span></label>
+              <label class="picker-row"><input type="checkbox" checked /><img alt="" /><span>stripe/stripe-node: Node.js library</span></label>
+              <label class="picker-row"><input type="checkbox" checked /><img alt="" /><span>Webhook signature verification · Issue #1187</span></label>
+            </div>
+          </div>
+        </div>
         <div class="row">
-          <button class="primary">Save + close 23 tabs</button>
+          <button class="primary">Save + close 19 tabs</button>
           <button>Keep tabs open</button>
           <button>Cancel</button>
         </div>
@@ -161,13 +179,11 @@
       themeButton.textContent = theme === 'dark' ? '☾' : '☀';
       themeButton.title = `Switch to ${theme === 'dark' ? 'light' : 'dark'} theme`;
 
-      // fake favicons, colors per domain block
-      const colors = ['#635bff', '#24292f', '#ff7a59', '#3ecf8e'];
-      document.querySelectorAll('.domain-group').forEach((group, i) => {
+      // fake favicons, one colour per host so rows read like real ones
+      const colors = ['#635bff', '#24292f', '#ff7a59', '#3ecf8e', '#00a8a8', '#c8382e'];
+      document.querySelectorAll('img').forEach((img, i) => {
         const svg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16"><rect width="16" height="16" fill="${colors[i % colors.length]}"/></svg>`;
-        group.querySelectorAll('img').forEach((img) => {
-          img.src = `data:image/svg+xml,${encodeURIComponent(svg)}`;
-        });
+        img.src = `data:image/svg+xml,${encodeURIComponent(svg)}`;
       });
     </script>
   </body>
