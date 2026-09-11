@@ -7,7 +7,6 @@ import {
   suggestName,
   groupByDomain,
   planGroups,
-  mergeTabs,
   defaultPick,
   formatAgo,
   domainOf,
@@ -21,9 +20,7 @@ let projects = [];
 let settings = { groupByDomain: false, theme: 'light' };
 let candidate = null; // chrome tabs offered by the save form's picker
 let pickedIds = new Set(); // which of them are checked
-let addPicker = null; // { projectId, tabs, picked } while adding to a saved project
 let selectionCount = 0; // how many tabs are multi-selected in this window (0 = none)
-let liveTabCount = 0; // siftable tabs in this window (for the "add tabs" label)
 let confirmDeleteId = null;
 const expanded = new Set(); // ephemeral UI state, fine to lose on panel reload
 
@@ -122,7 +119,6 @@ async function refreshSaveButton() {
   const selected = await selectedSiftableTabs();
   const count = selected.length || (await siftableTabs()).length;
   selectionCount = selected.length;
-  liveTabCount = count;
 
   const key = `${selected.length ? 'selected' : 'window'}:${count}`;
   if (key === lastButtonKey) return; // label only depends on this
@@ -351,38 +347,6 @@ function projectCard(project) {
   if (expanded.has(project.id)) {
     const body = el('div', { className: 'card-body' });
 
-    if (addPicker?.projectId === project.id) {
-      const confirm = el('button', {
-        className: 'primary small',
-        textContent: `Add ${addPicker.picked.size}`,
-        dataset: { action: 'add-confirm', id: project.id },
-      });
-      const actions = el('div', { className: 'row' });
-      actions.append(
-        confirm,
-        el('button', {
-          className: 'small',
-          textContent: 'Cancel',
-          dataset: { action: 'add-cancel', id: project.id },
-        }),
-      );
-
-      const picker = el('div', { className: 'picker' });
-      renderPicker(picker, addPicker.tabs, addPicker.picked, () => {
-        confirm.textContent = `Add ${addPicker.picked.size}`;
-      });
-      body.append(picker, actions);
-    } else {
-      body.append(
-        el('button', {
-          className: 'small card-add',
-          textContent: selectionCount
-            ? `Add ${selectionCount} selected tabs`
-            : `Add tabs from this window (${liveTabCount} open)`,
-          dataset: { action: 'add', id: project.id },
-        }),
-      );
-    }
     for (const group of groupByDomain(project.tabs)) {
       const section = el('div', { className: 'domain-group' });
       section.append(
@@ -428,7 +392,20 @@ async function onProjectClick(event) {
   }
 
   if (action === 'open') {
-    chrome.tabs.create({ url, active: false });
+    const windowId = await currentWindowId();
+    const all = await chrome.tabs.query({});
+    const matches = all.filter((t) => t.url === url);
+    // prefer the copy already in this window so the panel doesn't fling you elsewhere
+    const existing = matches.find((t) => t.windowId === windowId) ?? matches[0];
+
+    if (existing) {
+      await chrome.tabs.update(existing.id, { active: true });
+      await chrome.windows.update(existing.windowId, { focused: true });
+      status('Already open — jumped to that tab.');
+    } else {
+      await chrome.tabs.create({ url, active: true });
+      status('Opened in a new tab.');
+    }
     return;
   }
 
@@ -467,53 +444,6 @@ async function onProjectClick(event) {
         ? `Resumed “${project.name}” in a new window — ${problems[0]}`
         : `Resumed “${project.name}” in a new window${grouped.made ? `, ${grouped.made} tab groups` : ''}.`,
     );
-    return;
-  }
-
-  if (action === 'add') {
-    const project = projects.find((p) => p.id === id);
-    if (!project) return;
-
-    const saved = new Set(project.tabs.map((t) => t.url));
-    const fresh = (await siftableTabs()).filter((t) => !saved.has(t.url));
-    if (!fresh.length) {
-      status('Every open tab is already in this project.');
-      return;
-    }
-
-    addPicker = {
-      projectId: project.id,
-      tabs: fresh,
-      picked: defaultPick(fresh, (await selectedSiftableTabs()).map((t) => t.id)),
-    };
-    expanded.add(project.id);
-    renderProjects();
-    return;
-  }
-
-  if (action === 'add-cancel') {
-    addPicker = null;
-    renderProjects();
-    return;
-  }
-
-  if (action === 'add-confirm') {
-    const project = projects.find((p) => p.id === id);
-    if (!project || addPicker?.projectId !== id) return;
-
-    const chosen = addPicker.tabs.filter((t) => addPicker.picked.has(t.id));
-    if (!chosen.length) {
-      status('Pick at least one tab to add.');
-      return;
-    }
-
-    const merged = mergeTabs(project.tabs, await captureTabs(chosen));
-    project.tabs = merged.tabs;
-    project.lastActiveAt = Date.now();
-    addPicker = null;
-    await saveProjects(projects);
-    render();
-    status(`Added ${merged.added} tab${merged.added === 1 ? '' : 's'} to “${project.name}”.`);
     return;
   }
 

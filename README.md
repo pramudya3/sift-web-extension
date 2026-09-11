@@ -25,9 +25,9 @@ Local-first: no backend, no account, no AI, no network calls. The whole thing is
 |---|---|
 | Save window as project | rule-based name suggestion (`Stripe research`), editable |
 | Pick which tabs to save | opening *Sift this window* shows the tab list with checkboxes — All / None, a live count, pinned tabs unchecked by default. ⌘/Ctrl-click tabs first and that selection is the starting point |
-| Add tabs to a saved project | expand a project → *Add tabs*: same picker, showing only tabs it doesn't already hold; duplicates are skipped by url |
 | Save + close tabs | closes only the tabs that were saved and are still open |
 | List / search / resume / delete | `Resume` opens the project in a new window, in saved order |
+| Click a saved tab | jumps to that tab if it is already open (same window first), otherwise opens it — no duplicates |
 | Group by domain | one switch: groups the current window now, and every resume after |
 | Groups survive a save | resume rebuilds the groups the project was *saved* with (title + colour), even groups that mix domains; tabs with no group fall back to their domain |
 | Pinned tabs are left alone | Chrome refuses to mix pinned and unpinned tabs in one group, so Sift never touches them |

@@ -7,7 +7,6 @@ import {
   suggestName,
   groupByDomain,
   planGroups,
-  mergeTabs,
   defaultPick,
   tabFromChrome,
   formatAgo,
@@ -63,19 +62,6 @@ assert.deepEqual(kept.group, { title: 'Research', color: 'blue' });
 assert.equal(kept.domain, 'a.com');
 assert.equal('favicon' in kept, false, 'favicons come from chrome\'s cache, not storage');
 assert.equal('group' in tabFromChrome({ url: 'https://a.com/x', title: 'A' }), false);
-
-// mergeTabs: append new urls, skip ones the project already holds, keep order
-const existing = [{ url: 'https://a.com/1' }, { url: 'https://b.com/1' }];
-const merged = mergeTabs(existing, [
-  { url: 'https://b.com/1' }, // already saved
-  { url: 'https://c.com/1' },
-  { url: 'https://c.com/1' }, // duplicate inside the incoming batch
-  { url: undefined }, // never store a tab without a url
-]);
-assert.deepEqual(merged.tabs.map((t) => t.url), ['https://a.com/1', 'https://b.com/1', 'https://c.com/1']);
-assert.equal(merged.added, 1);
-assert.equal(merged.skipped, 3);
-assert.equal(mergeTabs([], []).added, 0);
 
 // defaultPick: pinned tabs are left out unless the user deliberately selected them
 const window1 = [

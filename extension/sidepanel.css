@@ -431,11 +431,6 @@ button.delete:hover:not(:disabled) {
   color: var(--danger-fg);
 }
 
-.card-add {
-  width: 100%;
-  text-align: left;
-}
-
 /* ---------- tab picker (new project and add-to-project share it) ---------- */
 
 .picker {
