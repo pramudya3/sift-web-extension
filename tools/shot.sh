@@ -20,8 +20,8 @@ STATE="${2:-list}"
 FLAGS=(--headless=new --disable-gpu --hide-scrollbars --force-device-scale-factor=2)
 
 SUFFIX=""; [ "$STATE" = "save" ] && SUFFIX="-save"
-OUT="dist/preview-$MODE$SUFFIX.png"
-mkdir -p dist
+OUT="docs/preview-$MODE$SUFFIX.png"
+mkdir -p docs
 "$BROWSER" "${FLAGS[@]}" --window-size=440,780 \
   --screenshot="$PWD/$OUT" "file://$PWD/tools/preview.html?theme=$MODE&state=$STATE" 2>/dev/null
 

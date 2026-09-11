@@ -13,6 +13,10 @@ Research → Save as Project → Close tabs → Resume in 1 click
 Local-first: no backend, no account, no AI, no network calls. The whole thing is
 ~600 lines of plain JavaScript, loads unpacked with zero build step.
 
+| Save a window | Resume it | Dark mode |
+|---|---|---|
+| ![Sift side panel, light theme](docs/preview-light.png) | ![Sift save form: name the project, save and close the tabs](docs/preview-light-save.png) | ![Sift side panel, dark theme](docs/preview-dark.png) |
+
 ## Status
 
 `v0.7.1` — local MVP, pre-store. Three features only:
@@ -38,6 +42,7 @@ extension/          the unpacked Chrome extension (MV3, no build step)
   sidepanel.html/.js/.css   the whole UI + logic
   lib/store.js        storage + pure rule logic (naming, grouping, stats)
   test/store.test.mjs
+docs/               screenshots used by this README (regenerate with tools/shot.sh)
 tools/
   make-icons.py       generates the toolbar icons (stdlib only, no Pillow)
   contrast.py         design checks: WCAG AA, theme completeness, DOM/CSS drift
@@ -67,8 +72,8 @@ cd extension
 node test/store.test.mjs        # rule logic: naming, grouping, stats
 python3 ../tools/contrast.py    # WCAG AA, dark-theme completeness, class + listener coverage
 python3 ../tools/make-icons.py  # regenerate icons
-bash ../tools/shot.sh light     # → dist/preview-light.png
-bash ../tools/shot.sh dark save # → dist/preview-dark-save.png (save-form state)
+bash ../tools/shot.sh light     # → docs/preview-light.png (README screenshots)
+bash ../tools/shot.sh dark save # → docs/preview-dark-save.png (save-form state)
 bash ../tools/pack.sh           # → dist/sift-extension-v0.7.1.zip
 ```
 
