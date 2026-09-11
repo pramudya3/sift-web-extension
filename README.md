@@ -28,7 +28,7 @@ Local-first: no backend, no account, no AI, no network calls. The whole thing is
 | List / search / resume / delete | `Resume` opens the project in a new window, in saved order |
 | Group by domain | one switch: groups the current window now, and every resume after |
 | Groups survive a save | resume rebuilds the groups the project was *saved* with (title + colour), even groups that mix domains; tabs with no group fall back to their domain |
-| Stats | projects · tabs · ~2 min/tab saved |
+| Pinned tabs are left alone | Chrome refuses to mix pinned and unpinned tabs in one group, so Sift never touches them |
 | Export / import JSON | free on purpose — backup is trust, not an upsell |
 | Theme toggle | header button, light by default, saved locally |
 
@@ -83,13 +83,17 @@ bash ../tools/pack.sh           # → dist/sift-extension-v0.9.0.zip
 can be reviewed in a normal tab instead of reloading the extension. `tools/contrast.py`
 fails the build if a text pair drops below 4.5:1, if the dark theme forgets to override
 a token, if a class has no CSS rule, if the preview invents UI the panel can't render,
-or if a button has no click listener.
+if a button has no click listener, or if a font size or gap is written as a raw pixel
+value instead of coming from the scale in `:root`.
 
 ## Design
 
 Neobrutalist: 2px borders, hard offset shadows, flat colour blocks, zero radius,
 uppercase micro-labels. Light is the default theme; dark inverts the outline
 (`--ink` goes light) so the same hard-shadow language works on a dark surface.
+
+Two enforced scales keep it from drifting: font sizes `10 / 11 / 12 / 13 / 14 / 15px`
+and gaps `2 / 6 / 8 / 12px`, both declared once in `:root`.
 
 ## Privacy
 

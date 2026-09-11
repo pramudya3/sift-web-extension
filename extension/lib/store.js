@@ -92,18 +92,6 @@ export async function saveSettings(settings) {
   await chrome.storage.local.set({ [SETTINGS_KEY]: settings });
 }
 
-export function computeStats(projects) {
-  const totalTabs = projects.reduce((n, p) => n + p.tabs.length, 0);
-  return { totalProjects: projects.length, totalTabs, minutesSaved: totalTabs * 2 };
-}
-
-export function formatMinutes(min) {
-  if (min < 60) return `${min}m`;
-  const h = Math.floor(min / 60);
-  const m = min % 60;
-  return m ? `${h}h ${m}m` : `${h}h`;
-}
-
 export function formatAgo(ts) {
   const s = Math.max(0, (Date.now() - ts) / 1000);
   if (s < 60) return 'just now';

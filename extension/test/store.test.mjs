@@ -8,8 +8,6 @@ import {
   groupByDomain,
   planGroups,
   tabFromChrome,
-  computeStats,
-  formatMinutes,
   formatAgo,
 } from '../lib/store.js';
 
@@ -39,15 +37,6 @@ assert.deepEqual(
 const ordered = groupByDomain(tabs(['https://b.com/1', 'https://a.com/1', 'https://b.com/2']), 'first-seen');
 assert.deepEqual(ordered.map((g) => g.domain), ['b.com', 'a.com']);
 
-assert.deepEqual(computeStats([]), { totalProjects: 0, totalTabs: 0, minutesSaved: 0 });assert.deepEqual(computeStats([{ tabs: [1, 2, 3] }, { tabs: [1] }]), {
-  totalProjects: 2,
-  totalTabs: 4,
-  minutesSaved: 8,
-});
-
-assert.equal(formatMinutes(45), '45m');
-assert.equal(formatMinutes(120), '2h');
-assert.equal(formatMinutes(125), '2h 5m');
 assert.equal(formatAgo(Date.now()), 'just now');
 assert.equal(formatAgo(Date.now() - 3 * 3600_000), '3h ago');
 

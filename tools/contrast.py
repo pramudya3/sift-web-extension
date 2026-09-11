@@ -114,6 +114,21 @@ def check_hidden_rule() -> bool:
     return True
 
 
+def check_gap_scale() -> bool:
+    """Same rule for spacing: every gap comes from the scale in :root."""
+    css = CSS.read_text()
+    root = re.search(r":root\s*\{(.*?)\}", css, re.S).group(1)
+    body = css.replace(root, "")
+    values = [v.strip() for v in re.findall(r"[^-]gap:\s*([^;]+);", body)]
+    raw = [v for v in values if not v.startswith("var(")]
+    if raw:
+        print("\nFAIL raw gap outside the scale:", ", ".join(raw))
+        return False
+    scale = dict(re.findall(r"--(gap[\w-]*):\s*(\d+px)", root))
+    print(f"ok   gap scale: {', '.join(f'{k}={v}' for k, v in scale.items())} ({len(values)} declarations)")
+    return True
+
+
 def check_font_scale() -> bool:
     """Every font-size must come from the scale in :root, so sizes cannot drift
     apart one declaration at a time (the input used to inherit and read small)."""
@@ -162,6 +177,7 @@ def main() -> int:
     failed |= not check_interactions()
     failed |= not check_hidden_rule()
     failed |= not check_font_scale()
+    failed |= not check_gap_scale()
     print()
     return 1 if failed else 0
 

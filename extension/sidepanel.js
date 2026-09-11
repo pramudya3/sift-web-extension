@@ -7,9 +7,7 @@ import {
   suggestName,
   groupByDomain,
   planGroups,
-  computeStats,
   formatAgo,
-  formatMinutes,
   domainOf,
   loadSettings,
   saveSettings,
@@ -69,7 +67,6 @@ async function init() {
 
 function render() {
   refreshSaveButton();
-  renderStats();
   renderProjects();
 }
 
@@ -184,13 +181,6 @@ function status(message) {
 }
 
 /* ---------- projects ---------- */
-
-function renderStats() {
-  const { totalProjects, totalTabs, minutesSaved } = computeStats(projects);
-  $('stats').textContent = totalProjects
-    ? `${totalProjects} project${totalProjects === 1 ? '' : 's'} · ${totalTabs} tabs · ~${formatMinutes(minutesSaved)} saved`
-    : '';
-}
 
 function visibleProjects() {
   const query = $('search').value.trim().toLowerCase();
@@ -392,10 +382,14 @@ async function groupTabs(windowId, groups) {
   let made = 0;
   const errors = [];
 
-  const live = new Set((await chrome.tabs.query({ windowId })).map((t) => t.id));
+  // Pinned tabs are intentional and Chrome refuses to mix pinned with unpinned in
+  // one group, so they are never touched — this was why grouping used to fail.
+  const groupable = new Set(
+    (await chrome.tabs.query({ windowId })).filter((t) => !t.pinned).map((t) => t.id),
+  );
 
   for (const [index, group] of groups.entries()) {
-    const tabIds = group.tabIds.filter((id) => id !== undefined && live.has(id));
+    const tabIds = group.tabIds.filter((id) => id !== undefined && groupable.has(id));
     if (!tabIds.length) continue;
     try {
       const groupId = await withRetry(() =>
@@ -417,7 +411,9 @@ async function groupTabs(windowId, groups) {
 // Current window → one group per domain (used by the toggle).
 async function groupWindowByDomain(windowId) {
   const live = await chrome.tabs.query({ windowId });
-  const shaped = live.map((t) => ({ id: t.id, domain: domainOf(t.url ?? t.pendingUrl ?? '') }));
+  const shaped = live
+    .filter((t) => !t.pinned) // leave pinned tabs exactly where they are
+    .map((t) => ({ id: t.id, domain: domainOf(t.url ?? t.pendingUrl ?? '') }));
   const groups = groupByDomain(
     shaped.filter((t) => t.domain),
     'first-seen',

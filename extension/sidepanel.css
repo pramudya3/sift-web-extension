@@ -15,12 +15,17 @@
   --hard: 3px 3px 0 var(--ink);
   --hard-sm: 2px 2px 0 var(--ink);
   /* one scale, six steps — every font-size below reads from here */
-  --fs-micro: 10px;  /* labels, meta, stats, note, toast, chips */
-  --fs-button: 11px; /* buttons and the toggle label (uppercase reads larger) */
-  --fs-row: 12px;    /* tab rows inside a project */
-  --fs-body: 13px;   /* body copy and project titles */
-  --fs-input: 14px;  /* field values — never inherit, fields get their own size */
-  --fs-title: 15px;  /* panel title */
+  --fs-micro: 10px; /* labels, note, toast, chips */
+  --fs-small: 11px; /* buttons, meta, toggle label */
+  --fs-row: 12px;   /* tab rows inside a project */
+  --fs-body: 13px;  /* body copy */
+  --fs-input: 14px; /* field values — never inherit */
+  --fs-name: 15px;  /* panel title and project names */
+  /* one spacing scale — every gap below reads from here */
+  --gap-micro: 2px;  /* inside a dense group (title + meta, tabs in a domain) */
+  --gap-tight: 6px;  /* related controls (buttons in a row, card actions) */
+  --gap: 8px;        /* related elements (form fields, project cards) */
+  --gap-loose: 12px; /* between panel sections */
 }
 
 /* Theme is explicit, not OS-driven: light is the default, the header button switches.
@@ -65,7 +70,7 @@ body {
   line-height: 1.4;
   display: flex;
   flex-direction: column;
-  gap: 12px;
+  gap: var(--gap-loose);
   padding: 12px 12px 0;
   overflow: hidden;
 }
@@ -75,15 +80,15 @@ body {
 .head {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: var(--gap);
 }
 
 h1 {
   margin: 0;
   display: flex;
   align-items: center;
-  gap: 6px;
-  font-size: var(--fs-title);
+  gap: var(--gap-tight);
+  font-size: var(--fs-name);
   font-weight: 800;
   text-transform: uppercase;
   letter-spacing: -0.01em;
@@ -100,21 +105,8 @@ h1 {
   border: 2px solid var(--ink);
 }
 
-.stats {
-  flex: 1;
-  min-width: 0;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-  font-size: var(--fs-micro);
-  font-weight: 700;
-  letter-spacing: 0.02em;
-  color: var(--muted);
-  text-align: right;
-  font-variant-numeric: tabular-nums;
-}
-
 button.theme {
+  margin-left: auto;
   flex: none;
   width: 30px;
   height: 30px;
@@ -127,7 +119,7 @@ button.theme {
 
 button {
   font: inherit;
-  font-size: var(--fs-button);
+  font-size: var(--fs-small);
   font-weight: 700;
   text-transform: uppercase;
   letter-spacing: 0.03em;
@@ -200,19 +192,19 @@ button.wide {
 .actions {
   display: flex;
   flex-direction: column;
-  gap: 9px;
+  gap: var(--gap-loose);
 }
 
 .form {
   display: flex;
   flex-direction: column;
-  gap: 8px;
+  gap: var(--gap);
 }
 
 .field {
   display: flex;
   flex-direction: column;
-  gap: 5px;
+  gap: var(--gap-tight);
   font-size: var(--fs-micro);
   font-weight: 700;
   text-transform: uppercase;
@@ -225,7 +217,7 @@ button.wide {
 .row {
   display: flex;
   flex-wrap: wrap;
-  gap: 5px;
+  gap: var(--gap-tight);
 }
 
 .row .primary {
@@ -264,8 +256,8 @@ input::placeholder {
 .toggle {
   display: flex;
   align-items: center;
-  gap: 8px;
-  font-size: var(--fs-button);
+  gap: var(--gap);
+  font-size: var(--fs-small);
   font-weight: 700;
   text-transform: uppercase;
   letter-spacing: 0.03em;
@@ -318,18 +310,6 @@ input::placeholder {
   color: var(--fg);
 }
 
-.toggle em {
-  font-style: normal;
-  font-weight: 600;
-  text-transform: none;
-  letter-spacing: 0;
-  color: var(--muted);
-}
-
-.toggle em::before {
-  content: " · ";
-}
-
 /* ---------- list ---------- */
 
 .list {
@@ -337,7 +317,7 @@ input::placeholder {
   min-height: 0;
   display: flex;
   flex-direction: column;
-  gap: 10px;
+  gap: var(--gap-loose);
   overflow-y: auto;
   padding-bottom: 4px;
 }
@@ -373,13 +353,13 @@ input::placeholder {
 .projects {
   display: flex;
   flex-direction: column;
-  gap: 8px;
+  gap: var(--gap);
 }
 
 .card {
   display: flex;
   flex-direction: column;
-  gap: 8px;
+  gap: var(--gap);
   padding: 10px;
   background: var(--surface);
   border: 2px solid var(--ink);
@@ -389,7 +369,7 @@ input::placeholder {
 .card-head {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: var(--gap);
 }
 
 .card-text {
@@ -397,7 +377,7 @@ input::placeholder {
   min-width: 0;
   display: flex;
   flex-direction: column;
-  gap: 2px;
+  gap: var(--gap-micro);
 }
 
 .card-title {
@@ -406,7 +386,7 @@ input::placeholder {
   box-shadow: none;
   background: none;
   text-transform: none;
-  font-size: var(--fs-body);
+  font-size: var(--fs-name);
   font-weight: 800;
   letter-spacing: -0.01em;
   text-align: left;
@@ -427,7 +407,7 @@ input::placeholder {
 }
 
 .meta {
-  font-size: var(--fs-micro);
+  font-size: var(--fs-small);
   font-weight: 700;
   letter-spacing: 0.01em;
   color: var(--muted);
@@ -438,7 +418,7 @@ input::placeholder {
   flex: none;
   display: flex;
   align-items: center;
-  gap: 5px;
+  gap: var(--gap-tight);
 }
 
 button.armed {
@@ -454,7 +434,7 @@ button.delete:hover:not(:disabled) {
 .card-body {
   display: flex;
   flex-direction: column;
-  gap: 10px;
+  gap: var(--gap);
   padding-top: 9px;
   border-top: 2px solid var(--ink);
   max-height: 260px;
@@ -464,13 +444,13 @@ button.delete:hover:not(:disabled) {
 .domain-group {
   display: flex;
   flex-direction: column;
-  gap: 2px;
+  gap: var(--gap-micro);
 }
 
 .domain {
   display: flex;
   align-items: center;
-  gap: 6px;
+  gap: var(--gap-tight);
   margin-bottom: 2px;
   font-size: var(--fs-micro);
   font-weight: 800;
@@ -490,7 +470,7 @@ button.delete:hover:not(:disabled) {
 .tab {
   display: flex;
   align-items: center;
-  gap: 7px;
+  gap: var(--gap-tight);
   width: 100%;
   padding: 5px;
   font-size: var(--fs-row);
@@ -529,7 +509,7 @@ button.delete:hover:not(:disabled) {
   margin: 10px 0;
   padding: 20px 12px;
   text-align: center;
-  font-size: var(--fs-button);
+  font-size: var(--fs-small);
   font-weight: 700;
   text-transform: uppercase;
   letter-spacing: 0.03em;
@@ -542,7 +522,7 @@ button.delete:hover:not(:disabled) {
 .foot {
   display: flex;
   align-items: center;
-  gap: 6px;
+  gap: var(--gap-tight);
   padding: 9px 0 10px;
   border-top: 2px solid var(--ink);
 }
