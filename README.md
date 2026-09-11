@@ -13,9 +13,12 @@ Research → Save as Project → Close tabs → Resume in 1 click
 Local-first: no backend, no account, no AI, no network calls. The whole thing is
 ~600 lines of plain JavaScript, loads unpacked with zero build step.
 
-| Save a window | Resume it | Dark mode |
+| Project list | Save a window — pick what to keep | Dark mode |
 |---|---|---|
-| ![Sift side panel, light theme](docs/preview-light.png) | ![Sift save form: name the project, save and close the tabs](docs/preview-light-save.png) | ![Sift side panel, dark theme](docs/preview-dark.png) |
+| ![Sift side panel listing saved research projects](docs/preview-light.png) | ![Sift save form: project name, tab picker with checkboxes, save and close](docs/preview-light-save.png) | ![Sift side panel in dark mode](docs/preview-dark.png) |
+
+Rendered from the real `extension/sidepanel.css` by `tools/shot.sh` — the same markup
+the panel builds, so these cannot drift from the shipped UI without a check failing.
 
 ## Status
 
@@ -77,7 +80,8 @@ node test/store.test.mjs        # rule logic: naming, grouping, stats
 python3 ../tools/contrast.py    # WCAG AA, dark-theme completeness, class + listener coverage
 python3 ../tools/make-icons.py  # regenerate icons
 bash ../tools/shot.sh light     # → docs/preview-light.png (README screenshots)
-bash ../tools/shot.sh dark save # → docs/preview-dark-save.png (save-form state)
+bash ../tools/shot.sh dark      # → docs/preview-dark.png
+bash ../tools/shot.sh light save # → docs/preview-light-save.png (save form + picker)
 bash ../tools/pack.sh           # → dist/sift-extension-v0.9.0.zip
 ```
 
