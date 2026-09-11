@@ -31,7 +31,11 @@ echo "▸ screenshots + zip"
 bash tools/shot.sh light >/dev/null
 bash tools/shot.sh dark >/dev/null
 bash tools/shot.sh light save >/dev/null
-bash tools/pack.sh | head -1
+# no piping into head/awk here: with pipefail an early-closed pipe kills the script
+bash tools/pack.sh >/dev/null
+ZIP="dist/sift-extension-$TAG.zip"
+[ -f "$ZIP" ] || { echo "✗ expected $ZIP"; exit 1; }
+echo "  $ZIP ($(du -h "$ZIP" | cut -f1 | tr -d ' '))"
 
 echo "▸ commit, tag, push"
 git add -A
