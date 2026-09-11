@@ -1,0 +1,148 @@
+<!doctype html>
+<!-- Design harness: real sidepanel.css + mock content, so UI work can be reviewed
+     in a normal tab instead of reloading the extension.
+     Render: bash tools/shot.sh [light|dark]  →  dist/preview-<mode>.png
+     Theme comes from ?theme=light|dark, the same [data-theme] switch the panel uses. -->
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <title>Sift preview</title>
+    <link rel="stylesheet" href="../extension/sidepanel.css" />
+    <style>
+
+      /* simulate the ~400px side panel box inside a normal tab */
+      body {
+        position: relative;
+        width: 400px;
+        height: 720px;
+        margin: 20px auto;
+        border: 2px solid var(--ink);
+        padding: 12px 12px 0;
+      }
+      .toast {
+        position: absolute;
+        bottom: 56px;
+      }
+    </style>
+  </head>
+  <body>
+    <header class="head">
+      <h1>Sift <span class="ver">v0.7.1</span></h1>
+      <span class="stats">3 projects · 47 tabs · 1h 34m</span>
+      <button class="theme" type="button">☾</button>
+    </header>
+
+    <section class="actions">
+      <button id="cta" class="primary wide">Sift this window (23 tabs)</button>
+      <div id="save-form" class="form" hidden>
+        <label class="field">
+          <span>Project name</span>
+          <input type="text" value="Stripe research" />
+        </label>
+        <div class="row">
+          <button class="primary">Save + close 23 tabs</button>
+          <button>Keep tabs open</button>
+          <button>Cancel</button>
+        </div>
+      </div>
+      <label class="toggle">
+        <input type="checkbox" checked />
+        <span class="switch" aria-hidden="true"></span>
+        <span>Group by domain<em>now and on resume</em></span>
+      </label>
+    </section>
+
+    <section class="list">
+      <div class="search">
+        <input type="search" placeholder="Search projects or domains" />
+        <kbd>/</kbd>
+      </div>
+      <div class="projects">
+        <article class="card">
+          <div class="card-head">
+            <div class="card-text">
+              <button class="card-title">Stripe research</button>
+              <span class="meta">23 tabs · 2h ago</span>
+            </div>
+            <div class="card-actions">
+              <button class="small cyan">Resume</button>
+              <button class="small delete">Delete</button>
+            </div>
+          </div>
+          <div class="card-body">
+            <div class="domain-group">
+              <div class="domain">stripe.com · 3</div>
+              <button class="tab"><img alt="" />API reference – Stripe Documentation</button>
+              <button class="tab"><img alt="" />Pricing &amp; fees for Indonesia</button>
+              <button class="tab"><img alt="" />Checkout Sessions | Stripe API</button>
+            </div>
+            <div class="domain-group">
+              <div class="domain">github.com · 2</div>
+              <button class="tab"><img alt="" />stripe/stripe-node: Node.js library</button>
+              <button class="tab"><img alt="" />Webhook signature verification · Issue #1187</button>
+            </div>
+          </div>
+        </article>
+
+        <article class="card">
+          <div class="card-head">
+            <div class="card-text">
+              <button class="card-title">Auth migration</button>
+              <span class="meta">14 tabs · yesterday</span>
+            </div>
+            <div class="card-actions">
+              <button class="small cyan">Resume</button>
+              <button class="small armed">Delete?</button>
+            </div>
+          </div>
+        </article>
+
+        <article class="card">
+          <div class="card-head">
+            <div class="card-text">
+              <button class="card-title">Competitor pricing + 4 more</button>
+              <span class="meta">10 tabs · 3d ago</span>
+            </div>
+            <div class="card-actions">
+              <button class="small cyan">Resume</button>
+              <button class="small delete">Delete</button>
+            </div>
+          </div>
+        </article>
+      </div>
+    </section>
+
+    <footer class="foot">
+      <button class="small">Export</button>
+      <button class="small">Import</button>
+      <span class="note">Local only · nothing leaves this browser</span>
+    </footer>
+
+    <p class="toast">Saved “Stripe research” and closed 23 tabs</p>
+
+    <script>
+      const theme = new URLSearchParams(location.search).get('theme') || 'light';
+      document.documentElement.dataset.theme = theme;
+
+      // ?state=save renders the save form instead of the CTA, like the real panel
+      if (new URLSearchParams(location.search).get('state') === 'save') {
+        document.getElementById('cta').hidden = true;
+        document.getElementById('save-form').hidden = false;
+      }
+
+      // mirrors applyTheme(): glyph shows the CURRENT theme
+      const themeButton = document.querySelector('.theme');
+      themeButton.textContent = theme === 'dark' ? '☾' : '☀';
+      themeButton.title = `Switch to ${theme === 'dark' ? 'light' : 'dark'} theme`;
+
+      // fake favicons, colors per domain block
+      const colors = ['#635bff', '#24292f', '#ff7a59', '#3ecf8e'];
+      document.querySelectorAll('.domain-group').forEach((group, i) => {
+        const svg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16"><rect width="16" height="16" fill="${colors[i % colors.length]}"/></svg>`;
+        group.querySelectorAll('img').forEach((img) => {
+          img.src = `data:image/svg+xml,${encodeURIComponent(svg)}`;
+        });
+      });
+    </script>
+  </body>
+</html>

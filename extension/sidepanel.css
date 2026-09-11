@@ -1,0 +1,579 @@
+:root {
+  color-scheme: light;
+  --bg: #fbf7ee;
+  --surface: #ffffff;
+  --fg: #0a0a0a;
+  --muted: #57544d;
+  --ink: #0a0a0a;
+  --primary: #ffd23f;
+  --primary-fg: #0a0a0a;
+  --cyan: #9ae8f2;
+  --cyan-fg: #0a0a0a;
+  --danger: #ff6b6b;
+  --danger-fg: #0a0a0a;
+  --focus: #2b2bff;
+  --hard: 3px 3px 0 var(--ink);
+  --hard-sm: 2px 2px 0 var(--ink);
+}
+
+/* Theme is explicit, not OS-driven: light is the default, the header button switches.
+   Dark inverts --ink so the same hard-shadow language works on a dark surface. */
+:root[data-theme="dark"] {
+  color-scheme: dark;
+  --bg: #131316;
+  --surface: #1e1e23;
+  --fg: #f7f7f2;
+  --muted: #b4b1a9;
+  --ink: #f7f7f2;
+  --primary: #ffd23f;
+  --primary-fg: #0a0a0a;
+  --cyan: #9ae8f2;
+  --cyan-fg: #0a0a0a;
+  --danger: #ff6b6b;
+  --danger-fg: #0a0a0a;
+  --focus: #9bb2ff;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+/* an author `display` beats the UA stylesheet's [hidden] rule — without this,
+   any element with the hidden attribute stays visible */
+[hidden] {
+  display: none !important;
+}
+
+html,
+body {
+  height: 100%;
+}
+
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--fg);
+  font: 13px/1.4 -apple-system, BlinkMacSystemFont, "Segoe UI", system-ui, sans-serif;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 12px 12px 0;
+  overflow: hidden;
+}
+
+/* ---------- header ---------- */
+
+.head {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+h1 {
+  margin: 0;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 15px;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: -0.01em;
+}
+
+.ver {
+  padding: 1px 5px;
+  font-size: 9px;
+  font-weight: 800;
+  text-transform: none;
+  letter-spacing: 0.02em;
+  color: var(--cyan-fg);
+  background: var(--cyan);
+  border: 2px solid var(--ink);
+}
+
+.stats {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  color: var(--muted);
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+
+button.theme {
+  flex: none;
+  width: 30px;
+  height: 30px;
+  padding: 0;
+  font-size: 14px;
+  line-height: 1;
+}
+
+/* ---------- controls ---------- */
+
+button {
+  font: inherit;
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  color: var(--fg);
+  background: var(--surface);
+  border: 2px solid var(--ink);
+  border-radius: 0;
+  padding: 7px 10px;
+  box-shadow: var(--hard-sm);
+  cursor: pointer;
+  transition:
+    transform 0.06s ease,
+    box-shadow 0.06s ease,
+    background-color 0.12s ease;
+}
+
+button:hover:not(:disabled) {
+  background: color-mix(in srgb, var(--primary) 45%, var(--surface));
+}
+
+button:active:not(:disabled) {
+  transform: translate(2px, 2px);
+  box-shadow: none;
+}
+
+button:disabled {
+  color: var(--muted);
+  background: var(--bg);
+  border-color: var(--muted);
+  box-shadow: none;
+  cursor: default;
+}
+
+button:focus-visible,
+input:focus-visible {
+  outline: 3px solid var(--focus);
+  outline-offset: 2px;
+}
+
+button.primary {
+  background: var(--primary);
+  color: var(--primary-fg);
+}
+
+button.primary:hover:not(:disabled) {
+  background: color-mix(in srgb, var(--primary) 80%, var(--surface));
+}
+
+button.cyan {
+  background: var(--cyan);
+  color: var(--cyan-fg);
+}
+
+button.cyan:hover:not(:disabled) {
+  background: color-mix(in srgb, var(--cyan) 80%, var(--surface));
+}
+
+button.small {
+  font-size: 10px;
+  padding: 5px 8px;
+}
+
+button.wide {
+  width: 100%;
+  padding: 11px;
+  font-size: 12px;
+  box-shadow: var(--hard);
+}
+
+.actions {
+  display: flex;
+  flex-direction: column;
+  gap: 9px;
+}
+
+.form {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--muted);
+}
+
+/* one row: primary takes the slack, the two escapes size to their labels.
+   wrap is a fallback for very narrow panels — never clip a button label. */
+.row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 5px;
+}
+
+.row .primary {
+  flex: 1 1 130px;
+  min-width: 0;
+}
+
+.row button {
+  padding: 7px 8px;
+  font-size: 10px;
+  white-space: nowrap;
+}
+
+/* ---------- inputs ---------- */
+
+input[type="text"],
+input[type="search"] {
+  font: inherit;
+  font-weight: 600;
+  width: 100%;
+  padding: 9px 10px;
+  color: var(--fg);
+  background: var(--surface);
+  border: 2px solid var(--ink);
+  border-radius: 0;
+}
+
+input::placeholder {
+  color: var(--muted);
+  font-weight: 600;
+}
+
+/* ---------- toggle (single control for grouping) ---------- */
+
+.toggle {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  color: var(--muted);
+  cursor: pointer;
+  user-select: none;
+}
+
+.toggle input {
+  position: absolute;
+  opacity: 0;
+  pointer-events: none;
+}
+
+.toggle .switch {
+  flex: none;
+  position: relative;
+  width: 34px;
+  height: 20px;
+  background: var(--surface);
+  border: 2px solid var(--ink);
+}
+
+.toggle .switch::after {
+  content: "";
+  position: absolute;
+  top: 2px;
+  left: 2px;
+  width: 12px;
+  height: 12px;
+  background: var(--muted);
+  transition: transform 0.1s ease, background-color 0.1s ease;
+}
+
+.toggle input:checked + .switch {
+  background: var(--primary);
+}
+
+.toggle input:checked + .switch::after {
+  background: var(--ink);
+  transform: translateX(14px);
+}
+
+.toggle input:focus-visible + .switch {
+  outline: 3px solid var(--focus);
+  outline-offset: 2px;
+}
+
+.toggle:has(input:checked) {
+  color: var(--fg);
+}
+
+.toggle em {
+  font-style: normal;
+  font-weight: 600;
+  text-transform: none;
+  letter-spacing: 0;
+  color: var(--muted);
+}
+
+.toggle em::before {
+  content: " · ";
+}
+
+/* ---------- list ---------- */
+
+.list {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  overflow-y: auto;
+  padding-bottom: 4px;
+}
+
+.search {
+  position: relative;
+}
+
+.search input {
+  padding-right: 34px;
+}
+
+.search kbd {
+  position: absolute;
+  top: 50%;
+  right: 8px;
+  transform: translateY(-50%);
+  padding: 1px 5px;
+  font: inherit;
+  font-size: 10px;
+  font-weight: 800;
+  color: var(--primary-fg);
+  background: var(--primary);
+  border: 2px solid var(--ink);
+  pointer-events: none;
+  transition: opacity 0.12s ease;
+}
+
+.search input:focus + kbd {
+  opacity: 0;
+}
+
+.projects {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.card {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 10px;
+  background: var(--surface);
+  border: 2px solid var(--ink);
+  box-shadow: var(--hard-sm);
+}
+
+.card-head {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.card-text {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.card-title {
+  padding: 0;
+  border: none;
+  box-shadow: none;
+  background: none;
+  text-transform: none;
+  font-size: 13px;
+  font-weight: 800;
+  letter-spacing: -0.01em;
+  text-align: left;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.card-title:hover:not(:disabled) {
+  background: none;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+  text-decoration-thickness: 2px;
+}
+
+.card-title:active:not(:disabled) {
+  transform: none;
+}
+
+.meta {
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.01em;
+  color: var(--muted);
+  font-variant-numeric: tabular-nums;
+}
+
+.card-actions {
+  flex: none;
+  display: flex;
+  align-items: center;
+  gap: 5px;
+}
+
+button.armed {
+  background: var(--danger);
+  color: var(--danger-fg);
+}
+
+button.delete:hover:not(:disabled) {
+  background: var(--danger);
+  color: var(--danger-fg);
+}
+
+.card-body {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding-top: 9px;
+  border-top: 2px solid var(--ink);
+  max-height: 260px;
+  overflow-y: auto;
+}
+
+.domain-group {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.domain {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-bottom: 2px;
+  font-size: 10px;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--muted);
+}
+
+.domain::before {
+  content: "";
+  width: 10px;
+  height: 10px;
+  background: var(--cyan);
+  border: 2px solid var(--ink);
+}
+
+.tab {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  width: 100%;
+  padding: 5px;
+  font-size: 12px;
+  font-weight: 500;
+  text-transform: none;
+  letter-spacing: 0;
+  text-align: left;
+  color: var(--fg);
+  background: transparent;
+  border: none;
+  box-shadow: none;
+}
+
+.tab:hover:not(:disabled) {
+  background: color-mix(in srgb, var(--primary) 55%, var(--surface));
+}
+
+.tab:active:not(:disabled) {
+  transform: none;
+}
+
+.tab img {
+  flex: none;
+  width: 14px;
+  height: 14px;
+  border: 1px solid var(--ink);
+}
+
+.tab span {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.empty {
+  margin: 10px 0;
+  padding: 20px 12px;
+  text-align: center;
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  color: var(--muted);
+  border: 2px dashed var(--muted);
+}
+
+/* ---------- footer + toast ---------- */
+
+.foot {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 9px 0 10px;
+  border-top: 2px solid var(--ink);
+}
+
+.note {
+  margin-left: auto;
+  max-width: 55%;
+  font-size: 10px;
+  font-weight: 600;
+  line-height: 1.25;
+  color: var(--muted);
+  text-align: right;
+}
+
+.toast {
+  position: fixed;
+  left: 12px;
+  right: 12px;
+  bottom: 52px;
+  margin: 0;
+  padding: 10px 12px;
+  font-size: 10px;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  color: var(--primary-fg);
+  background: var(--primary);
+  border: 2px solid var(--ink);
+  box-shadow: var(--hard);
+  animation: pop 0.12s ease-out;
+}
+
+@keyframes pop {
+  from {
+    transform: translateY(6px);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  * {
+    transition: none !important;
+    animation: none !important;
+  }
+}

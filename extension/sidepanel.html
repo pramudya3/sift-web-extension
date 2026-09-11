@@ -1,0 +1,57 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <title>Sift</title>
+    <link rel="stylesheet" href="sidepanel.css" />
+  </head>
+  <body>
+    <header class="head">
+      <h1>Sift <span id="version" class="ver"></span></h1>
+      <span id="stats" class="stats"></span>
+      <button id="theme" class="theme" type="button">☀</button>
+    </header>
+
+    <section class="actions">
+      <button id="save-btn" class="primary wide" disabled>Loading…</button>
+
+      <div id="save-form" class="form" hidden>
+        <label class="field">
+          <span>Project name</span>
+          <input id="project-name" type="text" autocomplete="off" spellcheck="false" />
+        </label>
+        <div class="row">
+          <button id="save-close" class="primary">Save + close tabs</button>
+          <button id="save-keep">Keep tabs open</button>
+          <button id="save-cancel">Cancel</button>
+        </div>
+      </div>
+
+      <label class="toggle" title="Group this window now, and group every resumed project">
+        <input type="checkbox" id="group-toggle" />
+        <span class="switch" aria-hidden="true"></span>
+        <span>Group by domain<em>now and on resume</em></span>
+      </label>
+    </section>
+
+    <section class="list">
+      <div class="search">
+        <input id="search" type="search" placeholder="Search projects or domains" autocomplete="off" />
+        <kbd>/</kbd>
+      </div>
+      <div id="projects" class="projects"></div>
+      <p id="empty" class="empty" hidden></p>
+    </section>
+
+    <footer class="foot">
+      <button id="export" class="small">Export</button>
+      <button id="import" class="small">Import</button>
+      <input id="import-file" type="file" accept="application/json" hidden />
+      <span class="note">Local only. Nothing leaves this browser.</span>
+    </footer>
+
+    <p id="after-save" class="toast" role="status" hidden></p>
+
+    <script type="module" src="sidepanel.js"></script>
+  </body>
+</html>

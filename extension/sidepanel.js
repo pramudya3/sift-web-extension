@@ -1,0 +1,419 @@
+import {
+  loadProjects,
+  saveProjects,
+  newId,
+  isSiftable,
+  tabFromChrome,
+  suggestName,
+  groupByDomain,
+  computeStats,
+  formatAgo,
+  formatMinutes,
+  domainOf,
+  loadSettings,
+  saveSettings,
+} from './lib/store.js';
+
+const $ = (id) => document.getElementById(id);
+
+let projects = [];
+let settings = { groupByDomain: false, theme: 'light' };
+let candidate = null; // chrome tabs captured for the pending save
+let confirmDeleteId = null;
+const expanded = new Set(); // ephemeral UI state, fine to lose on panel reload
+
+// apply the default theme synchronously so the panel never flashes the wrong one
+document.documentElement.dataset.theme = settings.theme;
+
+init();
+
+async function init() {
+  projects = await loadProjects();
+  settings = await loadSettings();
+  // stamped so you can always tell which build the panel is running
+  const version = chrome.runtime.getManifest().version;
+  $('version').textContent = `v${version}`;
+  console.log(`Sift v${version} — ${location.href}`);
+  applyTheme();
+  $('group-toggle').checked = settings.groupByDomain;
+  $('group-toggle').addEventListener('change', onGroupToggle);
+
+  $('save-btn').addEventListener('click', beginSave);
+  $('save-cancel').addEventListener('click', cancelSave);
+  $('save-keep').addEventListener('click', () => commitSave(false));
+  $('save-close').addEventListener('click', () => commitSave(true));
+  $('theme').addEventListener('click', toggleTheme);
+  $('search').addEventListener('input', renderProjects);
+  $('export').addEventListener('click', exportAll);
+  $('import').addEventListener('click', () => $('import-file').click());
+  $('import-file').addEventListener('change', importAll);
+  $('projects').addEventListener('click', onProjectClick);
+  $('project-name').addEventListener('keydown', (e) => {
+    if (e.key === 'Enter') commitSave(true); // primary action = save + close
+    if (e.key === 'Escape') cancelSave();
+  });
+  document.addEventListener('keydown', (e) => {
+    if (e.key !== '/' || e.metaKey || e.ctrlKey) return;
+    if (['INPUT', 'TEXTAREA'].includes(document.activeElement?.tagName)) return;
+    e.preventDefault();
+    $('search').focus();
+  });
+
+  for (const event of ['onCreated', 'onRemoved', 'onUpdated']) {
+    chrome.tabs[event].addListener(refreshSaveButton);
+  }
+
+  render();
+}
+
+function render() {
+  refreshSaveButton();
+  renderStats();
+  renderProjects();
+}
+
+/* ---------- theme ---------- */
+
+function applyTheme() {
+  const dark = settings.theme === 'dark';
+  document.documentElement.dataset.theme = dark ? 'dark' : 'light';
+
+  const button = $('theme');
+  button.textContent = dark ? '☾' : '☀';
+  button.title = `Switch to ${dark ? 'light' : 'dark'} theme`;
+  button.setAttribute('aria-label', button.title);
+}
+
+async function toggleTheme() {
+  settings = { ...settings, theme: settings.theme === 'dark' ? 'light' : 'dark' };
+  applyTheme();
+  await saveSettings(settings);
+}
+
+/* ---------- save ---------- */
+
+async function siftableTabs() {
+  const tabs = await chrome.tabs.query({ currentWindow: true });
+  return tabs.filter(isSiftable);
+}
+
+async function refreshSaveButton() {
+  if (candidate) return;
+
+  const tabs = await siftableTabs();
+  const btn = $('save-btn');
+  btn.textContent = tabs.length ? `Sift this window (${tabs.length} tabs)` : 'Nothing to sift in this window';
+  btn.disabled = tabs.length === 0;
+}
+
+async function beginSave() {
+  const tabs = await siftableTabs();
+  if (!tabs.length) return;
+
+  candidate = tabs;
+  $('save-btn').hidden = true;
+  $('save-form').hidden = false;
+  $('project-name').value = suggestName(tabs.map(tabFromChrome));
+  $('save-close').textContent = `Save + close ${tabs.length} tabs`;
+  $('project-name').focus();
+  $('project-name').select();
+}
+
+function cancelSave() {
+  candidate = null;
+  $('save-form').hidden = true;
+  $('save-btn').hidden = false;
+  $('after-save').hidden = true;
+  refreshSaveButton();
+}
+
+async function commitSave(closeTabs) {
+  if (!candidate) return;
+
+  const tabs = candidate.map(tabFromChrome);
+  const ids = candidate.map((t) => t.id);
+  const name = $('project-name').value.trim() || suggestName(tabs);
+
+  projects = [
+    { id: newId(), name, createdAt: Date.now(), lastActiveAt: Date.now(), tabs },
+    ...projects,
+  ];
+  await saveProjects(projects);
+  candidate = null;
+
+  let closed = 0;
+  if (closeTabs) {
+    // Only close tabs that are still open, so a stale id can't kill the wrong tab.
+    const live = new Set((await chrome.tabs.query({ currentWindow: true })).map((t) => t.id));
+    const toClose = ids.filter((id) => live.has(id));
+    if (toClose.length) {
+      await chrome.tabs.remove(toClose);
+      closed = toClose.length;
+    }
+  }
+
+  cancelSave();
+  render();
+  status(`Saved “${name}”${closed ? ` and closed ${closed} tabs` : ''}.`);
+}
+
+let statusTimer;
+function status(message) {
+  const toast = $('after-save');
+  toast.textContent = message;
+  toast.hidden = false;
+  clearTimeout(statusTimer);
+  statusTimer = setTimeout(() => (toast.hidden = true), 4200);
+}
+
+/* ---------- projects ---------- */
+
+function renderStats() {
+  const { totalProjects, totalTabs, minutesSaved } = computeStats(projects);
+  $('stats').textContent = totalProjects
+    ? `${totalProjects} project${totalProjects === 1 ? '' : 's'} · ${totalTabs} tabs · ~${formatMinutes(minutesSaved)} saved`
+    : '';
+}
+
+function visibleProjects() {
+  const query = $('search').value.trim().toLowerCase();
+  if (!query) return projects;
+  return projects.filter(
+    (p) => p.name.toLowerCase().includes(query) || p.tabs.some((t) => t.domain.toLowerCase().includes(query)),
+  );
+}
+
+function renderProjects() {
+  const list = $('projects');
+  list.textContent = '';
+  const items = visibleProjects();
+
+  if (!items.length) {
+    $('empty').hidden = false;
+    $('empty').textContent = projects.length
+      ? 'No projects match that search.'
+      : 'No projects yet. Sift your first window above.';
+    return;
+  }
+
+  $('empty').hidden = true;
+  for (const project of items) list.append(projectCard(project));
+}
+
+function projectCard(project) {
+  const card = el('article', { className: 'card' });
+  const head = el('div', { className: 'card-head' });
+
+  const text = el('div', { className: 'card-text' });
+  text.append(
+    el('button', {
+      className: 'card-title',
+      textContent: project.name,
+      dataset: { action: 'toggle', id: project.id },
+    }),
+    el('span', {
+      className: 'meta',
+      textContent: `${project.tabs.length} tabs · ${formatAgo(project.lastActiveAt)}`,
+    }),
+  );
+
+  const armed = confirmDeleteId === project.id;
+  const actions = el('div', { className: 'card-actions' });
+  actions.append(
+    el('button', {
+      className: 'small cyan',
+      textContent: 'Resume',
+      dataset: { action: 'resume', id: project.id },
+    }),
+    el('button', {
+      className: armed ? 'small armed' : 'small delete',
+      textContent: armed ? 'Delete?' : 'Delete',
+      dataset: { action: 'delete', id: project.id },
+    }),
+  );
+
+  head.append(text, actions);
+  card.append(head);
+
+  if (expanded.has(project.id)) {
+    const body = el('div', { className: 'card-body' });
+    for (const group of groupByDomain(project.tabs)) {
+      const section = el('div', { className: 'domain-group' });
+      section.append(
+        el('div', { className: 'domain', textContent: `${group.domain} · ${group.tabs.length}` }),
+      );
+      for (const tab of group.tabs) {
+        const row = el('button', {
+          className: 'tab',
+          title: tab.url,
+          dataset: { action: 'open', url: tab.url },
+        });
+        if (tab.favicon) row.append(el('img', { src: tab.favicon, alt: '', loading: 'lazy' }));
+        row.append(el('span', { textContent: tab.title }));
+        section.append(row);
+      }
+      body.append(section);
+    }
+    card.append(body);
+  }
+
+  return card;
+}
+
+async function onProjectClick(event) {
+  const target = event.target.closest('[data-action]');
+  const action = target?.dataset.action;
+
+  // clicking anywhere else disarms a pending delete
+  if (confirmDeleteId && action !== 'delete') {
+    confirmDeleteId = null;
+    if (!target) renderProjects();
+  }
+
+  if (!target) return;
+
+  const { id, url } = target.dataset;
+
+  if (action === 'toggle') {
+    if (expanded.has(id)) expanded.delete(id);
+    else expanded.add(id);
+    renderProjects();
+    return;
+  }
+
+  if (action === 'open') {
+    chrome.tabs.create({ url, active: false });
+    return;
+  }
+
+  if (action === 'resume') {
+    const project = projects.find((p) => p.id === id);
+    if (!project) return;
+    const win = await chrome.windows.create({ url: project.tabs.map((t) => t.url), focused: true });
+    const grouped = settings.groupByDomain ? await groupWindowByDomain(win.id) : 0;
+    project.lastActiveAt = Date.now();
+    await saveProjects(projects);
+    render();
+    status(`Resumed “${project.name}”${grouped ? ` in ${grouped} tab groups` : ''}.`);
+    return;
+  }
+
+  if (action === 'delete') {
+    if (confirmDeleteId !== id) {
+      confirmDeleteId = id;
+      renderProjects();
+      return;
+    }
+    projects = projects.filter((p) => p.id !== id);
+    confirmDeleteId = null;
+    await saveProjects(projects);
+    render();
+  }
+}
+
+/* ---------- native chrome.tabGroups: real tabs, real order ---------- */
+
+const GROUP_COLORS = ['grey', 'blue', 'red', 'yellow', 'green', 'pink', 'purple', 'cyan', 'orange'];
+
+// Groups the real tabs of one window. Returns how many groups were made (0 = nothing to do).
+async function groupWindowByDomain(windowId) {
+  // Query instead of trusting windows.create's return: urls are settled by now.
+  const live = await chrome.tabs.query({ windowId });
+  const shaped = live.map((t) => ({ id: t.id, domain: domainOf(t.url ?? t.pendingUrl ?? '') }));
+  const groups = groupByDomain(
+    shaped.filter((t) => t.domain),
+    'first-seen',
+  );
+  if (groups.length < 2) return 0; // single-domain window: grouping is just noise
+
+  let color = 0;
+  let made = 0;
+  for (const group of groups) {
+    try {
+      const groupId = await chrome.tabs.group({ tabIds: group.tabs.map((t) => t.id) });
+      await chrome.tabGroups.update(groupId, {
+        title: group.domain,
+        color: GROUP_COLORS[color++ % GROUP_COLORS.length],
+      });
+      made++;
+    } catch {
+      // grouping is cosmetic — never let it block the caller
+    }
+  }
+  return made;
+}
+
+async function currentWindowId() {
+  const [tab] = await chrome.tabs.query({ currentWindow: true });
+  return tab?.windowId;
+}
+
+// One control for grouping: it applies to this window now, and to every resume after.
+async function onGroupToggle(event) {
+  const on = event.target.checked;
+  settings = { ...settings, groupByDomain: on };
+  await saveSettings(settings);
+
+  const windowId = await currentWindowId();
+  if (windowId === undefined) return;
+
+  if (on) {
+    const made = await groupWindowByDomain(windowId);
+    status(made ? `Grouped this window into ${made} domains.` : 'Single domain here — grouping will apply on resume.');
+    return;
+  }
+
+  const ungrouped = await ungroupWindow(windowId);
+  status(ungrouped ? 'Ungrouped this window.' : 'Nothing was grouped.');
+}
+
+async function ungroupWindow(windowId) {
+  const tabs = await chrome.tabs.query({ windowId });
+  const grouped = tabs.filter((t) => t.groupId >= 0).map((t) => t.id);
+  if (!grouped.length) return 0;
+
+  await chrome.tabs.ungroup(grouped);
+  return grouped.length;
+}
+
+/* ---------- export / import (free on purpose: backup is trust, not an upsell) ---------- */
+
+function exportAll() {
+  const blob = new Blob([JSON.stringify(projects, null, 2)], { type: 'application/json' });
+  const link = document.createElement('a');
+  link.href = URL.createObjectURL(blob);
+  link.download = `sift-projects-${new Date().toISOString().slice(0, 10)}.json`;
+  link.click();
+  URL.revokeObjectURL(link.href);
+}
+
+async function importAll(event) {
+  const file = event.target.files?.[0];
+  event.target.value = '';
+  if (!file) return;
+
+  try {
+    const incoming = JSON.parse(await file.text());
+    if (!Array.isArray(incoming)) throw new Error('not an array');
+    const known = new Set(projects.map((p) => p.id));
+    const added = incoming.filter((p) => p?.id && Array.isArray(p.tabs) && !known.has(p.id));
+    projects = [...added, ...projects];
+    await saveProjects(projects);
+    render();
+    status(`Imported ${added.length} project${added.length === 1 ? '' : 's'}.`);
+  } catch {
+    status('Import failed — that is not a Sift export file.');
+  }
+}
+
+/* ---------- tiny DOM helper (textContent only, never innerHTML: titles are untrusted) ---------- */
+
+function el(tag, props = {}) {
+  const node = document.createElement(tag);
+  for (const [key, value] of Object.entries(props)) {
+    if (key === 'dataset') Object.assign(node.dataset, value);
+    else if (key in node) node[key] = value;
+    else node.setAttribute(key, value);
+  }
+  return node;
+}

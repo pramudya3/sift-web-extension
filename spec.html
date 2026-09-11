@@ -1,0 +1,427 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Sift — Spec (Ponytail MVP)</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  *{margin:0;padding:0;box-sizing:border-box}
+  :root{--bg:#FAFAF9;--card:#FFFFFF;--border:#E7E5E4;--text:#1C1917;--muted:#78716C;--accent:#0C0A09;--code-bg:#1C1917;--code-text:#E7E5E4}
+  body{font-family:'Inter',-apple-system,sans-serif;background:var(--bg);color:var(--text);line-height:1.7;-webkit-font-smoothing:antialiased}
+  a{color:#44403C;text-decoration:underline;text-decoration-color:#D6D3D1;text-underline-offset:3px}
+  a:hover{color:var(--accent);text-decoration-color:var(--accent)}
+  .header{position:sticky;top:0;z-index:20;background:rgba(250,250,249,0.85);backdrop-filter:blur(12px);border-bottom:1px solid var(--border)}
+  .header-inner{max-width:1120px;margin:0 auto;padding:14px 24px;display:flex;align-items:center;justify-content:space-between;gap:16px;flex-wrap:wrap}
+  .logo{display:flex;align-items:center;gap:12px}
+  .logo-mark{width:36px;height:36px;background:var(--accent);color:white;display:grid;place-items:center;border-radius:10px;font-weight:800;font-size:15px;letter-spacing:-0.02em}
+  .logo-text{font-weight:800;font-size:16px;letter-spacing:-0.03em;line-height:1}
+  .logo-sub{font-size:12px;color:var(--muted);font-weight:500;margin-top:2px}
+  .badges{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+  .badge{font-size:11px;font-weight:700;letter-spacing:0.06em;text-transform:uppercase;padding:6px 10px;border-radius:999px;border:1px solid var(--border);background:white;color:var(--muted)}
+  .badge-dark{background:var(--accent);color:white;border-color:var(--accent)}
+  .wrap{max-width:1120px;margin:0 auto;padding:32px 24px 64px;display:grid;grid-template-columns:260px 1fr;gap:32px}
+  @media(max-width:900px){.wrap{grid-template-columns:1fr;gap:24px} .toc{position:static !important}}
+  .toc{position:sticky;top:76px;align-self:start;background:var(--card);border:1px solid var(--border);border-radius:16px;padding:20px;max-height:calc(100vh - 100px);overflow:auto}
+  .toc-title{font-size:11px;font-weight:800;letter-spacing:0.08em;text-transform:uppercase;color:var(--muted);margin-bottom:12px}
+  .toc-nav ul{list-style:none;padding:0;margin:0}
+  .toc-nav li{margin:0}
+  .toc-nav a{display:block;padding:5px 0;font-size:13px;font-weight:500;color:var(--muted);text-decoration:none;border-left:2px solid transparent;padding-left:10px;margin-left:-12px;line-height:1.4}
+  .toc-nav a:hover{color:var(--text);border-left-color:var(--accent)}
+  .toc-nav ul ul{padding-left:12px}
+  .toc-nav ul ul a{font-size:12.5px;padding:3px 0}
+  .content{background:var(--card);border:1px solid var(--border);border-radius:20px;padding:40px;min-width:0}
+  @media(max-width:600px){.content{padding:24px}}
+  .content h1{font-size:30px;font-weight:800;letter-spacing:-0.04em;margin:0 0 6px;line-height:1.15}
+  .content h2{font-size:17px;font-weight:700;letter-spacing:-0.02em;margin:36px 0 12px;padding-top:24px;border-top:1px solid #F5F5F4}
+  .content h2:first-of-type{border-top:none;padding-top:0;margin-top:4px}
+  .content h3{font-size:14.5px;font-weight:650;margin:20px 0 8px;color:#292524}
+  .content p{margin:10px 0;color:#44403C;font-size:14.5px}
+  .content ul,.content ol{margin:10px 0 10px 20px;color:#44403C;font-size:14.5px}
+  .content li{margin:4px 0}
+  .content li::marker{color:#A8A29E}
+  .content blockquote{margin:16px 0;padding:14px 16px;background:#FEFCE8;border:1px solid #FDE047;border-left:4px solid #EAB308;border-radius:12px;color:#713F12;font-size:13.5px;line-height:1.6}
+  .content blockquote p{color:#713F12;margin:0}
+  .content code{font-family:'JetBrains Mono',monospace;font-size:12.5px;background:#F5F5F4;padding:2px 6px;border-radius:6px;border:1px solid #E7E5E4;color:#1C1917}
+  .content pre{background:var(--code-bg);border-radius:14px;padding:18px;overflow:auto;margin:16px 0;border:1px solid #292524}
+  .content pre code{background:transparent;border:none;padding:0;color:var(--code-text);font-size:12.5px;line-height:1.7;white-space:pre}
+  .content hr{border:none;border-top:1px solid var(--border);margin:32px 0}
+  .content table{width:100%;border-collapse:collapse;margin:16px 0;font-size:13.5px;display:block;overflow:auto}
+  .content th{text-align:left;font-weight:650;background:#FAFAF9;padding:10px 12px;border:1px solid var(--border);font-size:11px;letter-spacing:0.05em;text-transform:uppercase;color:var(--muted);white-space:nowrap}
+  .content td{padding:10px 12px;border:1px solid var(--border);vertical-align:top}
+  .kicker{display:inline-flex;align-items:center;gap:8px;background:#FEF08A;border:1px solid #FDE047;color:#713F12;font-size:11px;font-weight:800;letter-spacing:0.06em;text-transform:uppercase;padding:6px 10px;border-radius:999px;margin-bottom:14px}
+  .ponytail{margin-top:32px;background:#0C0A09;color:#E7E5E4;border-radius:16px;padding:20px 22px;display:flex;gap:14px;align-items:start}
+  .ponytail-icon{width:32px;height:32px;background:#EAB308;color:#0C0A09;display:grid;place-items:center;border-radius:8px;font-weight:800;font-size:14px;flex-shrink:0}
+  .ponytail-text{font-size:13px;line-height:1.6;color:#D6D3D1}
+  .ponytail-text strong{color:white}
+  .toc-nav a[href*="ponytail"]{display:none} .content h1[id*="ponytail"]{display:none} @media print{.header,.toc{display:none} .wrap{grid-template-columns:1fr} .content{border:none;padding:0}}
+</style>
+</head>
+<body>
+<header class="header">
+  <div class="header-inner">
+    <div class="logo">
+      <div class="logo-mark">S</div>
+      <div>
+        <div class="logo-text">Sift</div>
+        <div class="logo-sub">Close your tabs. Keep your research.</div>
+      </div>
+    </div>
+    <div class="badges">
+      <span class="badge badge-dark">Ponytail MVP</span>
+      <span class="badge">v0.1 — 2 weeks</span>
+      <span class="badge">WXT + Astro • Side Panel</span>
+    </div>
+  </div>
+</header>
+<div class="wrap">
+  <aside class="toc">
+    <div class="toc-title">Contents</div>
+    <nav class="toc-nav" role="doc-toc">
+<ul>
+<li><a href="#sift-spec-ponytail-mvp"
+id="toc-sift-spec-ponytail-mvp">Sift — Spec (Ponytail MVP)</a>
+<ul>
+<li><a href="#overview" id="toc-overview">1. Overview</a></li>
+<li><a href="#target-user-icp" id="toc-target-user-icp">2. Target User
+(ICP)</a></li>
+<li><a href="#problem" id="toc-problem">3. Problem</a></li>
+<li><a href="#tech-stack-minimal" id="toc-tech-stack-minimal">4. Tech
+Stack (Minimal)</a></li>
+<li><a href="#architecture-mvp" id="toc-architecture-mvp">5.
+Architecture (MVP)</a></li>
+<li><a href="#mvp-features-2-weeks-max"
+id="toc-mvp-features-2-weeks-max">6. MVP Features (2 Weeks Max)</a>
+<ul>
+<li><a href="#save-current-window-as-project"
+id="toc-save-current-window-as-project">6.1 Save Current Window as
+Project</a></li>
+<li><a href="#list-resume-projects" id="toc-list-resume-projects">6.2
+List &amp; Resume Projects</a></li>
+<li><a href="#local-analytics-inside-side-panel-no-web-app"
+id="toc-local-analytics-inside-side-panel-no-web-app">6.3 Local
+Analytics (Inside Side Panel, No Web App)</a></li>
+</ul></li>
+<li><a href="#non-goals-explicitly-skipped-for-mvp"
+id="toc-non-goals-explicitly-skipped-for-mvp">7. Non-Goals (Explicitly
+Skipped for MVP)</a></li>
+<li><a href="#data-model-local" id="toc-data-model-local">8. Data Model
+(Local)</a></li>
+<li><a href="#ai-layer-future-seam-do-not-build-for-mvp"
+id="toc-ai-layer-future-seam-do-not-build-for-mvp">9. AI Layer (Future
+Seam — Do Not Build for MVP)</a></li>
+</ul></li>
+<li><a
+href="#ponytail-on-demand-ai-proxy-metadata-only.-no-gorust-no-vectors-no-local-llm-until-pro-revenue-proves-it."
+id="toc-ponytail-on-demand-ai-proxy-metadata-only.-no-gorust-no-vectors-no-local-llm-until-pro-revenue-proves-it.">ponytail:
+on-demand AI proxy, metadata only. No Go/Rust, no vectors, no local LLM
+until Pro revenue proves it.</a>
+<ul>
+<li><a href="#extension-spec" id="toc-extension-spec">10. Extension
+Spec</a></li>
+<li><a href="#landing-spec-astro" id="toc-landing-spec-astro">11.
+Landing Spec (Astro)</a></li>
+<li><a href="#distribution" id="toc-distribution">12.
+Distribution</a></li>
+<li><a href="#roadmap-ponytail" id="toc-roadmap-ponytail">13. Roadmap
+(Ponytail)</a></li>
+<li><a href="#success-metrics-mvp" id="toc-success-metrics-mvp">14.
+Success Metrics (MVP)</a></li>
+<li><a href="#open-decisions" id="toc-open-decisions">15. Open
+Decisions</a></li>
+</ul></li>
+<li><a
+href="#ponytail-local-only-first-no-backenddashboardai.-add-api-when-storage-limit-hurts-add-web-dashboard-when-cross-device-is-top-request."
+id="toc-ponytail-local-only-first-no-backenddashboardai.-add-api-when-storage-limit-hurts-add-web-dashboard-when-cross-device-is-top-request.">ponytail:
+Local-only first, no backend/dashboard/AI. Add API when storage limit
+hurts, add web dashboard when cross-device is top request.</a></li>
+</ul>
+</nav>
+    <div style="margin-top:16px;padding-top:16px;border-top:1px solid #F5F5F4;font-size:12px;color:#A8A29E;line-height:1.5">
+      <strong style="color:#57534E">Read in 8 min</strong><br>
+      Local-first • No backend • Rule-based until PMF
+    </div>
+  </aside>
+  <main class="content">
+    <div class="kicker">✦ Memory layer for founders’ research</div>
+    <h1 id="sift-spec-ponytail-mvp">Sift — Spec (Ponytail MVP)</h1>
+<h2 id="overview">1. Overview</h2>
+<p><strong>Name:</strong> Sift <strong>Tagline:</strong> Close your
+tabs. Keep your research. <strong>Positioning:</strong> A memory layer
+for builders’ research. Not a tab manager. <strong>Core loop:</strong>
+<code>Research -&gt; Save as Project -&gt; Close tabs without anxiety -&gt; Resume in 1 click</code></p>
+<blockquote>
+<p>Sift answers: “What was I researching and where do I continue?”</p>
+</blockquote>
+<h2 id="target-user-icp">2. Target User (ICP)</h2>
+<p><strong>Core ICP: Builders &amp; Researchers</strong> — anyone whose
+job is <code>research -&gt; decision -&gt; build</code>.</p>
+<p><strong>Persona A: Founder / Indie Hacker (Primary)</strong> - Solo /
+early-stage, researches competitor, pricing, API, fundraising, hiring in
+parallel - 20-50 tabs = 3-4 projects mixed up (e.g., Instagram API vs
+Client Project) - Current hack: OneTab, Notion copy-paste, Chrome tab
+groups - Will pay if: can close tabs without losing 3h of research
+context</p>
+<p><strong>Persona B: Software Engineer / Product Engineer
+(Primary)</strong> - Researches docs, GitHub issues, Stack Overflow, API
+refs, architecture decisions - 30+ tabs across
+<code>docs + PRs + tickets + logs</code> — context lost after meetings /
+context switch - Current hack: keep tabs open as TODO, bookmark folders,
+<code>// TODO</code> tabs - Will pay if: can snapshot
+<code>debugging / feature research</code> and resume after standup
+without re-finding tabs</p>
+<p><strong>Persona C: Researcher / Analyst (Secondary)</strong> -
+Academic, market researcher, VC analyst — literature review, market
+reports, data sheets - 40+ papers/tabs, needs
+<code>What was I researching yesterday?</code> + next step - Will pay
+if: can sift papers into projects with auto summaries</p>
+<p><strong>Extended (related fields, same pain):</strong> Product
+Manager, Designer, Tech Lead, Data Scientist, DevRel — anyone doing deep
+web research to build/ship.</p>
+<p><strong>Anti-ICP:</strong> Casual browsing, students (unless
+building), entertainment/shopping tab hoarders. Ignore.</p>
+<h2 id="problem">3. Problem</h2>
+<p>Tabs are external memory. Builders keep tabs open because
+<code>close = forget</code>. Result: clutter, anxiety,
+<code>30 tabs = 30 unfinished things</code>.</p>
+<p>Sift reframes: <code>30 tabs = 3 active contexts</code>. Save
+context, close tabs. Whether it’s a founder validating pricing, an
+engineer spiking an API, or a researcher reviewing papers — same
+anxiety, same fix.</p>
+<h2 id="tech-stack-minimal">4. Tech Stack (Minimal)</h2>
+<p><strong>Extension (Product):</strong></p>
+<pre><code>WXT + TypeScript + Tailwind CSS + shadcn
+Manifest V3, chrome.sidePanel + chrome.storage.local + IndexedDB</code></pre>
+<p>No backend for MVP. No framework inside extension beyond WXT.</p>
+<p><strong>Landing (Validation):</strong></p>
+<pre><code>Astro + Tailwind + Cloudflare Pages (or Vercel)
+Plausible/PostHog script for analytics (no custom panel)</code></pre>
+<p>No Next.js, no Bun runtime for MVP. <code>pnpm + Node LTS</code>.</p>
+<p><strong>Later (only when 500+ active users ask for
+sync):</strong></p>
+<pre><code>API: Hono + Bun + Supabase/Turso + Better Auth + AI proxy (see §9)
+Dashboard: Next.js at app.sift.so (only for cross-device/share)</code></pre>
+<blockquote>
+<p>Stack is intentionally Bun + Hono, NOT Go/Rust. Solo velocity &gt;
+10ms perf. Go/Rust only when Bun latency hurts paying users at 1M+
+req/day.</p>
+</blockquote>
+<h2 id="architecture-mvp">5. Architecture (MVP)</h2>
+<pre><code>Chrome Window (tabs)
+      |
+      v
+WXT Extension [Popup + Side Panel]
+      |
+      v
+chrome.storage.local / IndexedDB { projects, tabs, stats }</code></pre>
+<p>No <code>https</code> call for MVP. Stats computed locally. When API
+exists: <code>Side Panel --fetch()--&gt; api.sift.so</code> (add
+host_permissions). Still no web dashboard. AI calls are on-demand
+<code>POST /ai/*</code> only when user clicks “Sift with AI” (never
+auto).</p>
+<h2 id="mvp-features-2-weeks-max">6. MVP Features (2 Weeks Max)</h2>
+<p>Only 3 features. Everything else is YAGNI.</p>
+<h3 id="save-current-window-as-project">6.1 Save Current Window as
+Project</h3>
+<ul>
+<li>Trigger: Side Panel button <code>Save this window</code> or Popup
+<code>Sift this window</code></li>
+<li>Input: Project name (auto-suggest: dominant domain/topic,
+editable)</li>
+<li>Captures per tab:
+<code>{ url, title, favicon, domain, lastActiveAt, createdAt }</code></li>
+<li>Action after save: Optional <code>Close tabs</code> (with
+confirmation)</li>
+<li>Limit (free): 3 projects / 30 tabs total -&gt; paywall trigger</li>
+</ul>
+<h3 id="list-resume-projects">6.2 List &amp; Resume Projects</h3>
+<ul>
+<li>View: Side Panel list
+<code>Project name | tab count | lastActive (e.g., 2h ago)</code></li>
+<li>Actions: <code>Open all</code> (new window),
+<code>Open + Close others</code>, <code>Delete</code></li>
+<li>Search: filter by project name/domain (local, no semantic
+search)</li>
+</ul>
+<h3 id="local-analytics-inside-side-panel-no-web-app">6.3 Local
+Analytics (Inside Side Panel, No Web App)</h3>
+<ul>
+<li>Computed locally from storage, no API</li>
+</ul>
+<pre><code>3 Projects | 47 Tabs Saved | ~2h Saved (est. 2min/tab)
+Most active: Instagram API - 8 tabs - 20m ago</code></pre>
+<ul>
+<li>Also: Group by domain inside project (rule-based:
+<code>new URL(url).hostname</code>), no AI.</li>
+</ul>
+<h2 id="non-goals-explicitly-skipped-for-mvp">7. Non-Goals (Explicitly
+Skipped for MVP)</h2>
+<ul>
+<li>No backend, no auth, no sync, no cloud</li>
+<li>No AI grouping/summary/next-step (rule-based only)</li>
+<li>No web dashboard at <code>app.sift.so</code></li>
+<li>No duplicate detection, no snooze, no tab history beyond current
+window</li>
+<li>No Firefox/Safari, no team/share</li>
+</ul>
+<blockquote>
+<p>Add when validated: cloud sync -&gt; AI summary -&gt; web dashboard
+-&gt; team.</p>
+</blockquote>
+<h2 id="data-model-local">8. Data Model (Local)</h2>
+<div class="sourceCode" id="cb6"><pre class="sourceCode ts"><code class="sourceCode typescript"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a><span class="co">// IndexedDB / chrome.storage.local</span></span>
+<span id="cb6-2"><a href="#cb6-2" aria-hidden="true" tabindex="-1"></a><span class="kw">type</span> Project <span class="op">=</span> {</span>
+<span id="cb6-3"><a href="#cb6-3" aria-hidden="true" tabindex="-1"></a>  id<span class="op">:</span> <span class="dt">string</span> <span class="co">// nanoid</span></span>
+<span id="cb6-4"><a href="#cb6-4" aria-hidden="true" tabindex="-1"></a>  name<span class="op">:</span> <span class="dt">string</span> <span class="co">// &quot;Instagram API Research&quot;</span></span>
+<span id="cb6-5"><a href="#cb6-5" aria-hidden="true" tabindex="-1"></a>  createdAt<span class="op">:</span> <span class="dt">number</span></span>
+<span id="cb6-6"><a href="#cb6-6" aria-hidden="true" tabindex="-1"></a>  lastActiveAt<span class="op">:</span> <span class="dt">number</span></span>
+<span id="cb6-7"><a href="#cb6-7" aria-hidden="true" tabindex="-1"></a>  tabs<span class="op">:</span> Tab[]</span>
+<span id="cb6-8"><a href="#cb6-8" aria-hidden="true" tabindex="-1"></a>}</span>
+<span id="cb6-9"><a href="#cb6-9" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb6-10"><a href="#cb6-10" aria-hidden="true" tabindex="-1"></a><span class="kw">type</span> Tab <span class="op">=</span> {</span>
+<span id="cb6-11"><a href="#cb6-11" aria-hidden="true" tabindex="-1"></a>  url<span class="op">:</span> <span class="dt">string</span></span>
+<span id="cb6-12"><a href="#cb6-12" aria-hidden="true" tabindex="-1"></a>  title<span class="op">:</span> <span class="dt">string</span></span>
+<span id="cb6-13"><a href="#cb6-13" aria-hidden="true" tabindex="-1"></a>  favicon<span class="op">?:</span> <span class="dt">string</span></span>
+<span id="cb6-14"><a href="#cb6-14" aria-hidden="true" tabindex="-1"></a>  domain<span class="op">:</span> <span class="dt">string</span> <span class="co">// new URL(url).hostname</span></span>
+<span id="cb6-15"><a href="#cb6-15" aria-hidden="true" tabindex="-1"></a>  lastActiveAt<span class="op">?:</span> <span class="dt">number</span></span>
+<span id="cb6-16"><a href="#cb6-16" aria-hidden="true" tabindex="-1"></a>  createdAt<span class="op">:</span> <span class="dt">number</span></span>
+<span id="cb6-17"><a href="#cb6-17" aria-hidden="true" tabindex="-1"></a>}</span>
+<span id="cb6-18"><a href="#cb6-18" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb6-19"><a href="#cb6-19" aria-hidden="true" tabindex="-1"></a><span class="kw">type</span> Stats <span class="op">=</span> {</span>
+<span id="cb6-20"><a href="#cb6-20" aria-hidden="true" tabindex="-1"></a>  totalProjects<span class="op">:</span> <span class="dt">number</span></span>
+<span id="cb6-21"><a href="#cb6-21" aria-hidden="true" tabindex="-1"></a>  totalTabs<span class="op">:</span> <span class="dt">number</span></span>
+<span id="cb6-22"><a href="#cb6-22" aria-hidden="true" tabindex="-1"></a>  estimatedTimeSavedMin<span class="op">:</span> <span class="dt">number</span> <span class="co">// tabs * 2</span></span>
+<span id="cb6-23"><a href="#cb6-23" aria-hidden="true" tabindex="-1"></a>}</span></code></pre></div>
+<h2 id="ai-layer-future-seam-do-not-build-for-mvp">9. AI Layer (Future
+Seam — Do Not Build for MVP)</h2>
+<p><strong>Status:</strong> Designed, not built. Leave seam only. Build
+in Phase 2 after 500 active + 20 paying.</p>
+<p><strong>Why not now:</strong> Rule-based <code>group by domain</code>
+solves 80% of <code>What was I doing?</code>. AI is $ cost + privacy
+risk before PMF.</p>
+<p><strong>When built, architecture:</strong></p>
+<pre><code>Side Panel [&quot;Sift with AI&quot; button]
+      |  { titles[], domains[] }  // metadata only, no HTML
+      v
+api.sift.so/ai/summarize (Hono + Bun, Cloudflare Workers / Fly)
+      |  prompt: &quot;Group these 10 tabs, name project, summarize, suggest next step&quot;
+      +---&gt; AI Provider (OpenAI / Anthropic via OpenRouter) // env AI_PROVIDER=
+      |
+      v
+{ projectName, summary, nextAction } -&gt; Side Panel</code></pre>
+<p><strong>Minimal endpoint (Hono, 30 lines, not Go/Rust):</strong></p>
+<div class="sourceCode" id="cb8"><pre class="sourceCode ts"><code class="sourceCode typescript"><span id="cb8-1"><a href="#cb8-1" aria-hidden="true" tabindex="-1"></a><span class="co">// api/src/routes/ai.ts</span></span>
+<span id="cb8-2"><a href="#cb8-2" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> { OpenAI } <span class="im">from</span> <span class="st">&quot;openai&quot;</span><span class="op">;</span></span>
+<span id="cb8-3"><a href="#cb8-3" aria-hidden="true" tabindex="-1"></a>app<span class="op">.</span><span class="fu">post</span>(<span class="st">&quot;/ai/summarize&quot;</span><span class="op">,</span> <span class="kw">async</span> (c) <span class="kw">=&gt;</span> {</span>
+<span id="cb8-4"><a href="#cb8-4" aria-hidden="true" tabindex="-1"></a>  <span class="kw">const</span> { tabs } <span class="op">=</span> <span class="cf">await</span> c<span class="op">.</span><span class="at">req</span><span class="op">.</span><span class="fu">json</span>()<span class="op">;</span> <span class="co">// [{title, domain}] - ponytail: metadata only</span></span>
+<span id="cb8-5"><a href="#cb8-5" aria-hidden="true" tabindex="-1"></a>  <span class="kw">const</span> prompt <span class="op">=</span> <span class="vs">`You are Sift. Group these tabs into one research project. Return JSON {projectName, summary: 2 sentences, nextAction: 1 sentence}: </span><span class="sc">${</span><span class="bu">JSON</span><span class="op">.</span><span class="fu">stringify</span>(tabs)<span class="sc">}</span><span class="vs">`</span><span class="op">;</span></span>
+<span id="cb8-6"><a href="#cb8-6" aria-hidden="true" tabindex="-1"></a>  <span class="kw">const</span> openai <span class="op">=</span> <span class="kw">new</span> <span class="fu">OpenAI</span>({ apiKey<span class="op">:</span> c<span class="op">.</span><span class="at">env</span><span class="op">.</span><span class="at">OPENAI_API_KEY</span> })<span class="op">;</span></span>
+<span id="cb8-7"><a href="#cb8-7" aria-hidden="true" tabindex="-1"></a>  <span class="kw">const</span> res <span class="op">=</span> <span class="cf">await</span> openai<span class="op">.</span><span class="at">chat</span><span class="op">.</span><span class="at">completions</span><span class="op">.</span><span class="fu">create</span>({ model<span class="op">:</span> <span class="st">&quot;gpt-4o-mini&quot;</span><span class="op">,</span> messages<span class="op">:</span> [{ role<span class="op">:</span> <span class="st">&quot;user&quot;</span><span class="op">,</span> content<span class="op">:</span> prompt }]<span class="op">,</span> response_format<span class="op">:</span> { type<span class="op">:</span> <span class="st">&quot;json_object&quot;</span> } })<span class="op">;</span></span>
+<span id="cb8-8"><a href="#cb8-8" aria-hidden="true" tabindex="-1"></a>  <span class="cf">return</span> c<span class="op">.</span><span class="fu">json</span>(<span class="bu">JSON</span><span class="op">.</span><span class="fu">parse</span>(res<span class="op">.</span><span class="at">choices</span>[<span class="dv">0</span>]<span class="op">.</span><span class="at">message</span><span class="op">!.</span><span class="at">content</span><span class="op">!</span>))<span class="op">;</span></span>
+<span id="cb8-9"><a href="#cb8-9" aria-hidden="true" tabindex="-1"></a>})<span class="op">;</span></span></code></pre></div>
+<p><strong>Rules:</strong> - On-demand only (button, not auto) —
+controls cost (~$0.002/project) &amp; privacy - Metadata-only input —
+never send <code>pageContent</code>/<code>history</code> unless user
+opts in - Provider abstraction = <code>AI_PROVIDER</code> env var
+(OpenRouter lets you swap with 1 line), not an abstraction layer with 5
+interfaces - No vectors/embeddings/DB for MVP — plain prompt over titles
+is enough until semantic search is top request - Do NOT use Go/Rust: Bun
+handles 10k users at 50ms. Rewrite only when p95 &gt;300ms for paying
+users.</p>
+<h1
+id="ponytail-on-demand-ai-proxy-metadata-only.-no-gorust-no-vectors-no-local-llm-until-pro-revenue-proves-it.">ponytail:
+on-demand AI proxy, metadata only. No Go/Rust, no vectors, no local LLM
+until Pro revenue proves it.</h1>
+<h2 id="extension-spec">10. Extension Spec</h2>
+<p><strong>Manifest V3 permissions:</strong></p>
+<div class="sourceCode" id="cb9"><pre
+class="sourceCode json"><code class="sourceCode json"><span id="cb9-1"><a href="#cb9-1" aria-hidden="true" tabindex="-1"></a><span class="fu">{</span></span>
+<span id="cb9-2"><a href="#cb9-2" aria-hidden="true" tabindex="-1"></a>  <span class="dt">&quot;permissions&quot;</span><span class="fu">:</span> <span class="ot">[</span><span class="st">&quot;tabs&quot;</span><span class="ot">,</span> <span class="st">&quot;storage&quot;</span><span class="ot">,</span> <span class="st">&quot;sidePanel&quot;</span><span class="ot">]</span><span class="fu">,</span></span>
+<span id="cb9-3"><a href="#cb9-3" aria-hidden="true" tabindex="-1"></a>  <span class="dt">&quot;host_permissions&quot;</span><span class="fu">:</span> <span class="ot">[]</span> <span class="er">//</span> <span class="er">add</span> <span class="ot">[</span><span class="st">&quot;https://api.sift.so/*&quot;</span><span class="ot">]</span> <span class="er">only</span> <span class="er">in</span> <span class="er">Phase</span> <span class="dv">1</span></span>
+<span id="cb9-4"><a href="#cb9-4" aria-hidden="true" tabindex="-1"></a><span class="fu">}</span></span></code></pre></div>
+<p><strong>UI surfaces:</strong> - <strong>Popup (400x500):</strong>
+Quick <code>Sift this window (23 tabs)</code> + <code>3 projects</code>
+list + <code>Open Side Panel</code> - <strong>Side Panel
+(primary):</strong> Full project list, search, stats, <code>Save</code>
++ <code>Resume</code> actions. This is the analytics panel. -
+<strong>Options page:</strong> None for MVP.</p>
+<p><strong>File structure (WXT):</strong></p>
+<pre><code>sift-extension/
+  entrypoints/
+    popup/ (popup.html + App.tsx)
+    sidepanel/ (index.html + App.tsx)
+    background.ts
+  components/ui/ (shadcn)
+  utils/storage.ts (IndexedDB wrapper)
+  utils/groupByDomain.ts
+  wxt.config.ts</code></pre>
+<p><strong>Commands:</strong></p>
+<div class="sourceCode" id="cb11"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb11-1"><a href="#cb11-1" aria-hidden="true" tabindex="-1"></a><span class="ex">pnpm</span> create wxt@latest sift-extension</span>
+<span id="cb11-2"><a href="#cb11-2" aria-hidden="true" tabindex="-1"></a><span class="ex">pnpm</span> dev <span class="co"># load unpacked .output/chrome-mv3</span></span>
+<span id="cb11-3"><a href="#cb11-3" aria-hidden="true" tabindex="-1"></a><span class="ex">pnpm</span> zip <span class="co"># for store upload</span></span></code></pre></div>
+<h2 id="landing-spec-astro">11. Landing Spec (Astro)</h2>
+<p><strong>Domain:</strong> <code>sift.so</code> (alts: getsift.app,
+siftformemory.com) <strong>Pages:</strong> Single page only
+<code>/</code> - Hero:
+<code>Close your tabs. Keep your research. / Your research, sifted. Not scattered.</code>
+- Demo GIF (fake, 10s): Save -&gt; Close -&gt; Resume - Social proof:
+waitlist count - CTA: Email waitlist (Tally / Loops / Formspree) -
+Footer: privacy note
+<code>No page content sent. Metadata only. Local-first.</code></p>
+<p><strong>No login, no dashboard.</strong> Deploy: Cloudflare Pages.
+Analytics: Plausible (1 script tag).</p>
+<h2 id="distribution">12. Distribution</h2>
+<ul>
+<li><strong>Weeks 1-2:</strong> <code>Load unpacked</code> ZIP to 20
+waitlist builders (founders + engineers) (manual)</li>
+<li><strong>Weeks 3-4:</strong> <code>Unlisted</code> on Chrome Web
+Store (private link, still reviewed)</li>
+<li><strong>After PMF:</strong> <code>Public</code> listing ($5 fee).
+Edge Add-ons for free (same bundle).</li>
+</ul>
+<h2 id="roadmap-ponytail">13. Roadmap (Ponytail)</h2>
+<ul>
+<li><strong>Phase 0 (Now, 2 weeks):</strong> Spec above. Validate with
+20 builders (10 founders + 10 engineers).</li>
+<li><strong>Phase 1 (After 100 active):</strong> Add backend
+<code>api.sift.so</code> for sync. Side Panel hits API. Still no web
+dashboard. Pro: unlimited projects ($29/yr or $5/mo).</li>
+<li><strong>Phase 2 (After 500 active + 20 paying):</strong> AI layer
+(context detection, summary, next step) as Pro. Still side panel.</li>
+<li><strong>Phase 3 (After cross-device demand):</strong>
+<code>app.sift.so</code> Next.js dashboard for history/search/share +
+team.</li>
+</ul>
+<h2 id="success-metrics-mvp">14. Success Metrics (MVP)</h2>
+<ul>
+<li>200 waitlist emails in 2 weeks (landing)</li>
+<li>20 builders (founders/engineers/researchers) install unpacked
+ZIP</li>
+<li>50% retain after 7 days (saved &gt;=2 projects)</li>
+<li>5/20 say “I’d pay to keep this” (interview) — signal is same across
+all three personas</li>
+</ul>
+<h2 id="open-decisions">15. Open Decisions</h2>
+<ul>
+<li>Free limit: 3 projects vs 5? Start 3, easy to relax.</li>
+<li>Auto-name algorithm: most frequent domain vs last active tab title?
+Start with editable placeholder.</li>
+</ul>
+<hr />
+<h1
+id="ponytail-local-only-first-no-backenddashboardai.-add-api-when-storage-limit-hurts-add-web-dashboard-when-cross-device-is-top-request.">ponytail:
+Local-only first, no backend/dashboard/AI. Add API when storage limit
+hurts, add web dashboard when cross-device is top request.</h1>
+
+    <div class="ponytail">
+      <div class="ponytail-icon">⧉</div>
+      <div class="ponytail-text">
+        <strong>Ponytail rule:</strong> Local-only first. No backend, no dashboard, no AI. Add <code style="background:#292524;color:#FEF08A;border-color:#44403C">api.sift.so</code> when storage limit hurts, add web dashboard when cross-device is top request.
+      </div>
+    </div>
+  </main>
+</div>
+</body>
+</html>
