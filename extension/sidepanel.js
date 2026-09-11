@@ -6,6 +6,7 @@ import {
   tabFromChrome,
   suggestName,
   groupByDomain,
+  planGroups,
   computeStats,
   formatAgo,
   formatMinutes,
@@ -113,7 +114,7 @@ async function beginSave() {
   candidate = tabs;
   $('save-btn').hidden = true;
   $('save-form').hidden = false;
-  $('project-name').value = suggestName(tabs.map(tabFromChrome));
+  $('project-name').value = suggestName(tabs.map((t) => tabFromChrome(t)));
   $('save-close').textContent = `Save + close ${tabs.length} tabs`;
   $('project-name').focus();
   $('project-name').select();
@@ -127,10 +128,26 @@ function cancelSave() {
   refreshSaveButton();
 }
 
+// Reads the tab groups once, then stamps each tab with the group it belonged to.
+async function captureTabs(chromeTabs) {
+  const groupIds = new Set(
+    chromeTabs.map((t) => t.groupId).filter((id) => id !== undefined && id >= 0),
+  );
+  const groups = new Map();
+  for (const id of groupIds) {
+    try {
+      groups.set(id, await chrome.tabGroups.get(id));
+    } catch {
+      // group was closed between the tab query and this read
+    }
+  }
+  return chromeTabs.map((t) => tabFromChrome(t, groups.get(t.groupId)));
+}
+
 async function commitSave(closeTabs) {
   if (!candidate) return;
 
-  const tabs = candidate.map(tabFromChrome);
+  const tabs = await captureTabs(candidate);
   const ids = candidate.map((t) => t.id);
   const name = $('project-name').value.trim() || suggestName(tabs);
 
@@ -290,11 +307,14 @@ async function onProjectClick(event) {
     const project = projects.find((p) => p.id === id);
     if (!project) return;
     const win = await chrome.windows.create({ url: project.tabs.map((t) => t.url), focused: true });
-    const grouped = settings.groupByDomain ? await groupWindowByDomain(win.id) : 0;
+    const grouped = settings.groupByDomain ? await applyGroups(win.id, project.tabs) : { made: 0, errors: [] };
     project.lastActiveAt = Date.now();
     await saveProjects(projects);
     render();
-    status(`Resumed “${project.name}”${grouped ? ` in ${grouped} tab groups` : ''}.`);
+    status(
+      `Resumed “${project.name}”${grouped.made ? ` in ${grouped.made} tab groups` : ''}` +
+        (grouped.errors.length ? ` — grouping failed: ${grouped.errors[0]}` : '.') ,
+    );
     return;
   }
 
@@ -315,32 +335,81 @@ async function onProjectClick(event) {
 
 const GROUP_COLORS = ['grey', 'blue', 'red', 'yellow', 'green', 'pink', 'purple', 'cyan', 'orange'];
 
-// Groups the real tabs of one window. Returns how many groups were made (0 = nothing to do).
+const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
+
+async function withRetry(fn, attempts = 3) {
+  for (let attempt = 1; ; attempt++) {
+    try {
+      return await fn();
+    } catch (error) {
+      // "Tabs cannot be edited right now (user may be dragging a tab)" is transient —
+      // it is the normal failure right after a window full of tabs starts loading.
+      if (attempt >= attempts) throw error;
+      await sleep(120 * attempt);
+    }
+  }
+}
+
+// A freshly created window reports tabs before their urls land; grouping them too
+// early silently produces zero groups.
+async function waitForUrls(windowId, timeoutMs = 2500) {
+  const deadline = Date.now() + timeoutMs;
+  let tabs = await chrome.tabs.query({ windowId });
+  while (Date.now() < deadline && !tabs.every((t) => t.url || t.pendingUrl)) {
+    await sleep(80);
+    tabs = await chrome.tabs.query({ windowId });
+  }
+  return tabs;
+}
+
+// groups: [{ title, color?, tabIds }] — returns what actually happened, never throws.
+async function groupTabs(groups) {
+  let made = 0;
+  const errors = [];
+
+  for (const [index, group] of groups.entries()) {
+    const tabIds = group.tabIds.filter((id) => id !== undefined);
+    if (!tabIds.length) continue;
+    try {
+      const groupId = await withRetry(() => chrome.tabs.group({ tabIds }));
+      await chrome.tabGroups.update(groupId, {
+        title: group.title,
+        color: group.color ?? GROUP_COLORS[index % GROUP_COLORS.length],
+      });
+      made++;
+    } catch (error) {
+      errors.push(`${group.title}: ${error.message}`);
+    }
+  }
+
+  return { made, errors };
+}
+
+// Current window → one group per domain (used by the toggle).
 async function groupWindowByDomain(windowId) {
-  // Query instead of trusting windows.create's return: urls are settled by now.
   const live = await chrome.tabs.query({ windowId });
   const shaped = live.map((t) => ({ id: t.id, domain: domainOf(t.url ?? t.pendingUrl ?? '') }));
   const groups = groupByDomain(
     shaped.filter((t) => t.domain),
     'first-seen',
-  );
-  if (groups.length < 2) return 0; // single-domain window: grouping is just noise
+  ).map((group) => ({ title: group.domain, tabIds: group.tabs.map((t) => t.id) }));
 
-  let color = 0;
-  let made = 0;
-  for (const group of groups) {
-    try {
-      const groupId = await chrome.tabs.group({ tabIds: group.tabs.map((t) => t.id) });
-      await chrome.tabGroups.update(groupId, {
-        title: group.domain,
-        color: GROUP_COLORS[color++ % GROUP_COLORS.length],
-      });
-      made++;
-    } catch {
-      // grouping is cosmetic — never let it block the caller
-    }
-  }
-  return made;
+  if (groups.length < 2) return { made: 0, errors: [] }; // one domain: nothing to group
+  return groupTabs(groups);
+}
+
+// Resumed window → rebuild the groups the project was saved with.
+async function applyGroups(windowId, savedTabs) {
+  const live = await waitForUrls(windowId);
+  const groups = planGroups(savedTabs)
+    .map((group) => ({
+      ...group,
+      tabIds: group.indices.map((index) => live[index]?.id).filter((id) => id !== undefined),
+    }))
+    .filter((group) => group.tabIds.length);
+
+  if (groups.length < 2) return { made: 0, errors: [] };
+  return groupTabs(groups);
 }
 
 async function currentWindowId() {
@@ -358,8 +427,14 @@ async function onGroupToggle(event) {
   if (windowId === undefined) return;
 
   if (on) {
-    const made = await groupWindowByDomain(windowId);
-    status(made ? `Grouped this window into ${made} domains.` : 'Single domain here — grouping will apply on resume.');
+    const { made, errors } = await groupWindowByDomain(windowId);
+    status(
+      errors.length
+        ? `Grouping failed: ${errors[0]}`
+        : made
+          ? `Grouped this window into ${made} domains.`
+          : 'Single domain here — grouping will apply on resume.',
+    );
     return;
   }
 

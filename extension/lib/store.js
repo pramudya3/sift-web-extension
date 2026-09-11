@@ -24,16 +24,35 @@ export function domainOf(url) {
 
 export const isSiftable = (tab) => /^https?:/i.test(tab.url ?? '');
 
-export function tabFromChrome(tab) {
+export function tabFromChrome(tab, group) {
   const now = Date.now();
   return {
     url: tab.url,
     title: tab.title || tab.url,
     favicon: tab.favIconUrl,
     domain: domainOf(tab.url),
+    // remember the tab group the user actually had, so a resume can rebuild it
+    ...(group?.title ? { group: { title: group.title, color: group.color } } : {}),
     lastActiveAt: tab.lastAccessed ?? now,
     createdAt: now,
   };
+}
+
+// Resume plan from saved tabs: a stored group wins even across domains, and tabs with
+// no stored group fall back to their domain. Returns [{title, color, indices}] in
+// first-seen order, so the rebuilt window keeps the order the user left it in.
+export function planGroups(tabs) {
+  const groups = new Map();
+  tabs.forEach((tab, index) => {
+    const title = tab.group?.title || tab.domain || 'other';
+    const found = groups.get(title);
+    if (found) {
+      found.indices.push(index);
+      return;
+    }
+    groups.set(title, { title, color: tab.group?.color, indices: [index] });
+  });
+  return [...groups.values()];
 }
 
 // ponytail: naive TLD strip — "docs.stripe.com" -> "stripe", but "x.co.uk" -> "co".

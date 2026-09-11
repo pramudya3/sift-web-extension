@@ -19,7 +19,7 @@ Local-first: no backend, no account, no AI, no network calls. The whole thing is
 
 ## Status
 
-`v0.7.1` — local MVP, pre-store. Three features only:
+`v0.8.0` — local MVP, pre-store. Three features only:
 
 | Feature | Notes |
 |---|---|
@@ -27,6 +27,7 @@ Local-first: no backend, no account, no AI, no network calls. The whole thing is
 | Save + close tabs | closes only the tabs that were saved and are still open |
 | List / search / resume / delete | `Resume` opens the project in a new window, in saved order |
 | Group by domain | one switch: groups the current window now, and every resume after |
+| Groups survive a save | resume rebuilds the groups the project was *saved* with (title + colour), even groups that mix domains; tabs with no group fall back to their domain |
 | Stats | projects · tabs · ~2 min/tab saved |
 | Export / import JSON | free on purpose — backup is trust, not an upsell |
 | Theme toggle | header button, light by default, saved locally |
@@ -63,7 +64,7 @@ which is git-ignored — this repo is the code.
 
 After editing code: click **⟳** on the extension card, then **close and reopen the
 side panel** — reloading the extension does not re-render an open panel.
-The panel header stamps the running version (`SIFT v0.7.1`), so you can always tell
+The panel header stamps the running version (`SIFT v0.8.0`), so you can always tell
 which build is live.
 
 ## Develop
@@ -75,7 +76,7 @@ python3 ../tools/contrast.py    # WCAG AA, dark-theme completeness, class + list
 python3 ../tools/make-icons.py  # regenerate icons
 bash ../tools/shot.sh light     # → docs/preview-light.png (README screenshots)
 bash ../tools/shot.sh dark save # → docs/preview-dark-save.png (save-form state)
-bash ../tools/pack.sh           # → dist/sift-extension-v0.7.1.zip
+bash ../tools/pack.sh           # → dist/sift-extension-v0.8.0.zip
 ```
 
 `tools/preview.html` renders the real `sidepanel.css` with mock projects, so UI changes

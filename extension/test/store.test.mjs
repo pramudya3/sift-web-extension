@@ -6,6 +6,8 @@ import {
   isSiftable,
   suggestName,
   groupByDomain,
+  planGroups,
+  tabFromChrome,
   computeStats,
   formatMinutes,
   formatAgo,
@@ -37,8 +39,7 @@ assert.deepEqual(
 const ordered = groupByDomain(tabs(['https://b.com/1', 'https://a.com/1', 'https://b.com/2']), 'first-seen');
 assert.deepEqual(ordered.map((g) => g.domain), ['b.com', 'a.com']);
 
-assert.deepEqual(computeStats([]), { totalProjects: 0, totalTabs: 0, minutesSaved: 0 });
-assert.deepEqual(computeStats([{ tabs: [1, 2, 3] }, { tabs: [1] }]), {
+assert.deepEqual(computeStats([]), { totalProjects: 0, totalTabs: 0, minutesSaved: 0 });assert.deepEqual(computeStats([{ tabs: [1, 2, 3] }, { tabs: [1] }]), {
   totalProjects: 2,
   totalTabs: 4,
   minutesSaved: 8,
@@ -49,5 +50,26 @@ assert.equal(formatMinutes(120), '2h');
 assert.equal(formatMinutes(125), '2h 5m');
 assert.equal(formatAgo(Date.now()), 'just now');
 assert.equal(formatAgo(Date.now() - 3 * 3600_000), '3h ago');
+
+// planGroups: saved groups win even across domains; bare tabs fall back to domain
+const saved = [
+  { url: 'https://a.com/1', domain: 'a.com', group: { title: 'Research', color: 'blue' } },
+  { url: 'https://b.com/1', domain: 'b.com', group: { title: 'Research', color: 'blue' } },
+  { url: 'https://c.com/1', domain: 'c.com' },
+  { url: 'https://c.com/2', domain: 'c.com' },
+];
+const plan = planGroups(saved);
+assert.deepEqual(plan.map((g) => [g.title, g.indices]), [
+  ['Research', [0, 1]],
+  ['c.com', [2, 3]],
+]);
+assert.equal(plan[0].color, 'blue');
+assert.equal(plan[1].color, undefined);
+
+// tabFromChrome keeps the group it was given, and drops it when there is none
+const kept = tabFromChrome({ url: 'https://a.com/x', title: 'A' }, { title: 'Research', color: 'blue' });
+assert.deepEqual(kept.group, { title: 'Research', color: 'blue' });
+assert.equal(kept.domain, 'a.com');
+assert.equal('group' in tabFromChrome({ url: 'https://a.com/x', title: 'A' }), false);
 
 console.log('store.js ok');
