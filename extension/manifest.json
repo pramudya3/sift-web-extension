@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
-  "name": "Sift v0.11.0 (dev)",
-  "version": "0.11.0",
+  "name": "Sift v0.12.0 (dev)",
+  "version": "0.12.0",
   "description": "Close your tabs. Keep your research.",
   "minimum_chrome_version": "114",
   "permissions": [

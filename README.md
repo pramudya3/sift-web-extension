@@ -24,6 +24,8 @@ Local-first: no backend, no account, no AI, no network calls. The whole thing is
 | Feature | Notes |
 |---|---|
 | Save window as project | rule-based name suggestion (`Stripe research`), editable |
+| Save *some* tabs | Chrome's native tab multi-select (⌘/Ctrl-click, Shift-click a range): the button becomes `Sift 3 selected tabs` — no picker UI to learn |
+| Add tabs to a saved project | expand a project → `Add tabs from this window` / `Add 3 selected tabs`; duplicates are skipped by url |
 | Save + close tabs | closes only the tabs that were saved and are still open |
 | List / search / resume / delete | `Resume` opens the project in a new window, in saved order |
 | Group by domain | one switch: groups the current window now, and every resume after |

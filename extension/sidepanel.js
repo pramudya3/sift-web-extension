@@ -7,6 +7,7 @@ import {
   suggestName,
   groupByDomain,
   planGroups,
+  mergeTabs,
   formatAgo,
   domainOf,
   loadSettings,
@@ -18,6 +19,8 @@ const $ = (id) => document.getElementById(id);
 let projects = [];
 let settings = { groupByDomain: false, theme: 'light' };
 let candidate = null; // chrome tabs captured for the pending save
+let selectionCount = 0; // how many tabs are multi-selected in this window (0 = none)
+let liveTabCount = 0; // siftable tabs in this window (for the "add tabs" label)
 let confirmDeleteId = null;
 const expanded = new Set(); // ephemeral UI state, fine to lose on panel reload
 
@@ -58,15 +61,16 @@ async function init() {
     $('search').focus();
   });
 
-  for (const event of ['onCreated', 'onRemoved', 'onUpdated']) {
+  for (const event of ['onCreated', 'onRemoved', 'onUpdated', 'onActivated', 'onHighlighted', 'onMoved']) {
     chrome.tabs[event].addListener(scheduleRefresh);
   }
 
   render();
 }
 
-function render() {
-  refreshSaveButton();
+async function render() {
+  // await the counts: the "add tabs" label on an expanded card reads them
+  await refreshSaveButton();
   renderProjects();
 }
 
@@ -95,29 +99,52 @@ async function siftableTabs() {
   return tabs.filter(isSiftable);
 }
 
+// Chrome's own tab multi-select (⌘/Ctrl-click, Shift-click a range). One highlighted
+// tab is just the active tab, so only 2+ counts as a deliberate selection — that way
+// selective capture needs no picker UI and the button label teaches it.
+async function selectedSiftableTabs() {
+  const tabs = await chrome.tabs.query({ currentWindow: true, highlighted: true });
+  const siftable = tabs.filter(isSiftable);
+  return siftable.length > 1 ? siftable : [];
+}
+
+async function tabsToCapture() {
+  const selected = await selectedSiftableTabs();
+  return selected.length ? selected : siftableTabs();
+}
+
 async function refreshSaveButton() {
   if (candidate) return;
 
-  const tabs = await siftableTabs();
-  if (tabs.length === lastTabCount) return; // label only depends on the count
-  lastTabCount = tabs.length;
+  const selected = await selectedSiftableTabs();
+  const count = selected.length || (await siftableTabs()).length;
+  selectionCount = selected.length;
+  liveTabCount = count;
+
+  const key = `${selected.length ? 'selected' : 'window'}:${count}`;
+  if (key === lastButtonKey) return; // label only depends on this
+  lastButtonKey = key;
 
   const btn = $('save-btn');
-  btn.textContent = tabs.length ? `Sift this window (${tabs.length} tabs)` : 'Nothing to sift in this window';
-  btn.disabled = tabs.length === 0;
+  btn.textContent = !count
+    ? 'Nothing to sift in this window'
+    : selected.length
+      ? `Sift ${count} selected tabs`
+      : `Sift this window (${count} tabs)`;
+  btn.disabled = count === 0;
 }
 
 // onUpdated fires several times per page load (status, title, favicon), so a burst of
 // 20 loading tabs would otherwise mean 60-100 tabs.query round trips.
 let refreshTimer;
-let lastTabCount = -1;
+let lastButtonKey = '';
 function scheduleRefresh() {
   clearTimeout(refreshTimer);
   refreshTimer = setTimeout(refreshSaveButton, 150);
 }
 
 async function beginSave() {
-  const tabs = await siftableTabs();
+  const tabs = await tabsToCapture();
   if (!tabs.length) return;
 
   candidate = tabs;
@@ -256,6 +283,15 @@ function projectCard(project) {
 
   if (expanded.has(project.id)) {
     const body = el('div', { className: 'card-body' });
+    body.append(
+      el('button', {
+        className: 'small card-add',
+        textContent: selectionCount
+          ? `Add ${selectionCount} selected tabs`
+          : `Add tabs from this window (${liveTabCount})`,
+        dataset: { action: 'add', id: project.id },
+      }),
+    );
     for (const group of groupByDomain(project.tabs)) {
       const section = el('div', { className: 'domain-group' });
       section.append(
@@ -339,6 +375,29 @@ async function onProjectClick(event) {
       problems.length
         ? `Resumed “${project.name}” in a new window — ${problems[0]}`
         : `Resumed “${project.name}” in a new window${grouped.made ? `, ${grouped.made} tab groups` : ''}.`,
+    );
+    return;
+  }
+
+  if (action === 'add') {
+    const project = projects.find((p) => p.id === id);
+    if (!project) return;
+
+    const incoming = await captureTabs(await tabsToCapture());
+    const merged = mergeTabs(project.tabs, incoming);
+    if (!merged.added) {
+      status('Every one of those tabs is already in this project.');
+      return;
+    }
+
+    project.tabs = merged.tabs;
+    project.lastActiveAt = Date.now();
+    await saveProjects(projects);
+    expanded.add(project.id);
+    render();
+    status(
+      `Added ${merged.added} tab${merged.added === 1 ? '' : 's'}` +
+        (merged.skipped ? `, skipped ${merged.skipped} already saved.` : '.'),
     );
     return;
   }

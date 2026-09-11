@@ -27,7 +27,7 @@
   </head>
   <body>
     <header class="head">
-      <h1>Sift <span class="ver">v0.11.0</span></h1>
+      <h1>Sift <span class="ver">v0.12.0</span></h1>
       <button class="theme" type="button">☾</button>
     </header>
 
@@ -69,6 +69,7 @@
             </div>
           </div>
           <div class="card-body">
+            <button class="small card-add">Add 3 selected tabs</button>
             <div class="domain-group">
               <div class="domain">stripe.com · 3</div>
               <button class="tab"><img alt="" />API reference – Stripe Documentation</button>
@@ -127,6 +128,32 @@
       if (new URLSearchParams(location.search).get('state') === 'save') {
         document.getElementById('cta').hidden = true;
         document.getElementById('save-form').hidden = false;
+      }
+
+      // ?projects=N clones the sample card N times for perf/memory measurement
+      const wanted = Number(new URLSearchParams(location.search).get('projects') || 0);
+      if (wanted >= 1) {
+        const list = document.querySelector('.projects');
+        const sample = list.firstElementChild;
+        const heapBefore = performance.memory?.usedJSHeapSize ?? 0;
+        const t0 = performance.now();
+        const collapsed = new URLSearchParams(location.search).has('collapsed');
+        while (list.children.length < wanted) {
+          const clone = sample.cloneNode(true);
+          if (collapsed) clone.querySelector('.card-body')?.remove(); // realistic default state
+          list.appendChild(clone);
+        }
+        document.documentElement.dataset.perf = JSON.stringify({
+          projects: list.children.length,
+          nodes: document.getElementsByTagName('*').length,
+          imgs: document.images.length,
+          heapBeforeMB: +(heapBefore / 1048576).toFixed(2),
+          heapAfterMB: performance.memory
+            ? +(performance.memory.usedJSHeapSize / 1048576).toFixed(2)
+            : -1,
+          windowMB: +(performance.memory?.totalJSHeapSize / 1048576 || 0).toFixed(2),
+          layoutMs: +(performance.now() - t0).toFixed(1),
+        });
       }
 
       // mirrors applyTheme(): glyph shows the CURRENT theme

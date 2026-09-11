@@ -431,6 +431,11 @@ button.delete:hover:not(:disabled) {
   color: var(--danger-fg);
 }
 
+.card-add {
+  width: 100%;
+  text-align: left;
+}
+
 .card-body {
   display: flex;
   flex-direction: column;

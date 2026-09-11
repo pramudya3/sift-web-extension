@@ -80,6 +80,24 @@ export function groupByDomain(tabs, order = 'size') {
     : list.sort((a, b) => b.tabs.length - a.tabs.length || a.domain.localeCompare(b.domain));
 }
 
+// Add tabs to a project, skipping urls it already holds. Pure: no chrome api, no dom.
+export function mergeTabs(existing, incoming) {
+  const seen = new Set(existing.map((t) => t.url));
+  const added = [];
+
+  for (const tab of incoming) {
+    if (!tab.url || seen.has(tab.url)) continue;
+    seen.add(tab.url);
+    added.push(tab);
+  }
+
+  return {
+    tabs: [...existing, ...added],
+    added: added.length,
+    skipped: incoming.length - added.length,
+  };
+}
+
 const SETTINGS_KEY = 'sift.settings';
 
 export async function loadSettings() {
