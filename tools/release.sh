@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # Cut a release: bump the version, run every check, build the zip, commit, tag,
-# push, and publish the zip as a GitHub release — so installing Sift never
+# push, and publish the zip as a GitHub release — so installing Tabrary never
 # requires cloning the repo.
 #
 #   bash tools/release.sh            # patch bump  (0.14.0 -> 0.14.1)
@@ -33,7 +33,7 @@ bash tools/shot.sh dark >/dev/null
 bash tools/shot.sh light save >/dev/null
 # no piping into head/awk here: with pipefail an early-closed pipe kills the script
 bash tools/pack.sh >/dev/null
-ZIP="dist/sift-extension-$TAG.zip"
+ZIP="dist/tabrary-$TAG.zip"
 [ -f "$ZIP" ] || { echo "✗ expected $ZIP"; exit 1; }
 echo "  $ZIP ($(du -h "$ZIP" | cut -f1 | tr -d ' '))"
 
@@ -44,13 +44,13 @@ git diff --cached --quiet || git commit -q -m "Release $TAG"
 if git rev-parse -q --verify "refs/tags/$TAG" >/dev/null; then
   echo "✗ tag $TAG already exists — bump the version instead"; exit 1
 fi
-git tag -a "$TAG" -m "Sift $TAG"
+git tag -a "$TAG" -m "Tabrary $TAG"
 git push -q
 git push -q origin "$TAG"
 
 NOTES="$(mktemp)"
 cat > "$NOTES" <<EOF
-**Download \`sift-extension-$TAG.zip\` below** — no clone, no build step, no Node.
+**Download \`tabrary-$TAG.zip\` below** — no clone, no build step, no Node.
 
 ### Install
 
@@ -58,7 +58,7 @@ cat > "$NOTES" <<EOF
 2. \`chrome://extensions\` (or \`brave://extensions\`, \`edge://extensions\`)
 3. Turn on **Developer mode**
 4. **Load unpacked** → pick the unzipped folder
-5. Click the Sift icon → the side panel opens
+5. Click the Tabrary icon → the side panel opens
 
 Works on any Chromium browser 114+: Chrome, Brave, Edge, Opera, Vivaldi.
 
@@ -76,8 +76,8 @@ saved projects live in \`chrome.storage.local\`, not in the folder, so they surv
 EOF
 
 echo "▸ github release"
-gh release create "$TAG" "dist/sift-extension-$TAG.zip" \
-  --title "Sift $TAG" \
+gh release create "$TAG" "dist/tabrary-$TAG.zip" \
+  --title "Tabrary $TAG" \
   --notes-file "$NOTES" \
   --latest
 rm -f "$NOTES"

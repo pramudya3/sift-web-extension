@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Generate Sift toolbar icons with stdlib only (no Pillow, no design tool).
+"""Generate Tabrary toolbar icons with stdlib only (no Pillow, no design tool).
 Run: python3 tools/make-icons.py
 """
 import struct

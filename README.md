@@ -1,4 +1,4 @@
-# Sift
+# Tabrary
 
 **Close your tabs. Keep your research.**
 
@@ -11,7 +11,7 @@ Research → Save as Project → Close tabs → Resume in 1 click
 ```
 
 Local-first: no backend, no account, no AI, no network calls. The whole thing is
-~600 lines of plain JavaScript, loads unpacked with zero build step.
+~650 lines of plain JavaScript, loads unpacked with zero build step.
 
 Works on any Chromium browser 114+: **Chrome, Brave, Edge, Opera, Vivaldi** (built and
 tested on Chrome and Brave). Firefox and Safari are out of scope — the side panel and
@@ -19,7 +19,7 @@ tab-group APIs are Chromium-only.
 
 ## Install (no clone needed)
 
-**[Download the latest release →](https://github.com/pramudya3/sift-web-extension/releases/latest)**
+**[Download the latest release →](https://github.com/pramudya3/tabrary/releases/latest)**
 
 1. Unzip the download
 2. `chrome://extensions` — or `brave://extensions`, `edge://extensions`
@@ -32,7 +32,7 @@ survive.
 
 | Project list | Save a window — pick what to keep | Dark mode |
 |---|---|---|
-| ![Sift side panel listing saved research projects](docs/preview-light.png) | ![Sift save form: project name, tab picker with checkboxes, save and close](docs/preview-light-save.png) | ![Sift side panel in dark mode](docs/preview-dark.png) |
+| ![Tabrary side panel listing saved research projects](docs/preview-light.png) | ![Tabrary save form: project name, tab picker with checkboxes, save and close](docs/preview-light-save.png) | ![Tabrary side panel in dark mode](docs/preview-dark.png) |
 
 Rendered from the real `extension/sidepanel.css` by `tools/shot.sh` — the same markup
 the panel builds, so these cannot drift from the shipped UI without a check failing.
@@ -44,13 +44,13 @@ the panel builds, so these cannot drift from the shipped UI without a check fail
 | Feature | Notes |
 |---|---|
 | Save window as project | rule-based name suggestion (`Stripe research`), editable |
-| Pick which tabs to save | opening *Sift this window* shows the tab list with checkboxes — All / None, a live count, pinned tabs unchecked by default. ⌘/Ctrl-click tabs first and that selection is the starting point |
+| Pick which tabs to save | opening *Save this window* shows the tab list with checkboxes — All / None, a live count, pinned tabs unchecked by default. ⌘/Ctrl-click tabs first and that selection is the starting point |
 | Save + close tabs | closes only the tabs that were saved and are still open |
 | List / search / resume / delete | `Resume` opens the project in a new window, in saved order |
 | Click a saved tab | jumps to that tab if it is already open (same window first), otherwise opens it — no duplicates |
 | Group by domain | one switch: groups the current window now, and every resume after |
 | Groups survive a save | resume rebuilds the groups the project was *saved* with (title + colour), even groups that mix domains; tabs with no group fall back to their domain |
-| Pinned tabs are left alone | Chrome refuses to mix pinned and unpinned tabs in one group, so Sift never touches them |
+| Pinned tabs are left alone | Chrome refuses to mix pinned and unpinned tabs in one group, so Tabrary never touches them |
 | Export / import JSON | free on purpose — backup is trust, not an upsell |
 | Theme toggle | header button, light by default, saved locally |
 
@@ -72,7 +72,7 @@ tools/
   contrast.py         design checks: WCAG AA, theme completeness, DOM/CSS drift
   shot.sh             headless screenshots of the UI
   preview.html        design harness — real CSS, mock content
-  pack.sh             builds dist/sift-extension-v<version>.zip
+  pack.sh             builds dist/tabrary-v<version>.zip
   release.sh          bump + check + tag + publish the zip as a GitHub release
   version.mjs         bumps the version everywhere it appears
   bench.mjs           hot-path timings
@@ -85,11 +85,11 @@ which is git-ignored — this repo is the code.
 
 1. `chrome://extensions` → enable **Developer mode**
 2. **Load unpacked** → select the `extension/` folder
-3. Click the Sift icon → the side panel opens
+3. Click the Tabrary icon → the side panel opens
 
 After editing code: click **⟳** on the extension card, then **close and reopen the
 side panel** — reloading the extension does not re-render an open panel.
-The panel header stamps the running version (`SIFT v0.9.0`), so you can always tell
+The panel header stamps the running version (`TABRARY v<version>`), so you can always tell
 which build is live.
 
 ## Develop
@@ -99,7 +99,7 @@ npm test                    # rule logic: naming, grouping, picker defaults
 npm run check               # WCAG AA, theme completeness, class/listener coverage, scales
 npm run bench               # hot-path timings on synthetic libraries
 npm run shots               # → docs/preview-*.png (the screenshots above)
-npm run pack                # → dist/sift-extension-v<version>.zip
+npm run pack                # → dist/tabrary-v<version>.zip
 npm run release -- minor    # bump, check, screenshot, pack, tag, push, publish
 ```
 

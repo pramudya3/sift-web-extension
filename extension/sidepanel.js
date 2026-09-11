@@ -35,7 +35,7 @@ async function init() {
   // stamped so you can always tell which build the panel is running
   const version = chrome.runtime.getManifest().version;
   $('version').textContent = `v${version}`;
-  console.log(`Sift v${version} — ${location.href}`);
+  console.log(`Tabrary v${version} — ${location.href}`);
   applyTheme();
   $('group-toggle').checked = settings.groupByDomain;
   $('group-toggle').addEventListener('change', onGroupToggle);
@@ -126,10 +126,10 @@ async function refreshSaveButton() {
 
   const btn = $('save-btn');
   btn.textContent = !count
-    ? 'Nothing to sift in this window'
+    ? 'Nothing to save in this window'
     : selected.length
-      ? `Sift ${count} selected tabs`
-      : `Sift this window (${count} tabs)`;
+      ? `Save ${count} selected tabs`
+      : `Save this window (${count} tabs)`;
   btn.disabled = count === 0;
 }
 
@@ -301,7 +301,7 @@ function renderProjects() {
     $('empty').hidden = false;
     $('empty').textContent = projects.length
       ? 'No projects match that search.'
-      : 'No projects yet. Sift your first window above.';
+      : 'No projects yet. Save your first window above.';
     return;
   }
 
@@ -427,7 +427,7 @@ async function onProjectClick(event) {
 
     const placed = await chrome.tabs.query({ windowId: win.id });
     console.info(
-      `Sift resume: newWindow=${win.id} urls=${urls.length} tabsInWindow=${placed.length} groups=${grouped.made}` +
+      `Tabrary resume: newWindow=${win.id} urls=${urls.length} tabsInWindow=${placed.length} groups=${grouped.made}` +
         (grouped.errors.length ? ` errors=${grouped.errors.join('; ')}` : ''),
     );
 
@@ -607,7 +607,7 @@ function exportAll() {
   const blob = new Blob([JSON.stringify(projects, null, 2)], { type: 'application/json' });
   const link = document.createElement('a');
   link.href = URL.createObjectURL(blob);
-  link.download = `sift-projects-${new Date().toISOString().slice(0, 10)}.json`;
+  link.download = `tabrary-projects-${new Date().toISOString().slice(0, 10)}.json`;
   link.click();
   URL.revokeObjectURL(link.href);
 }
@@ -627,7 +627,7 @@ async function importAll(event) {
     render();
     status(`Imported ${added.length} project${added.length === 1 ? '' : 's'}.`);
   } catch {
-    status('Import failed — that is not a Sift export file.');
+    status('Import failed — that is not a Tabrary export file.');
   }
 }
 

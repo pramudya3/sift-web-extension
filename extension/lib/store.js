@@ -1,6 +1,8 @@
 // Storage + pure helpers. No dependencies, no network.
 // ponytail: chrome.storage.local instead of IndexedDB — same persistence, ~20 lines
 // instead of ~150. Move to IndexedDB only if you start storing page snapshots.
+// storage keys kept their original prefix on purpose: they are internal, invisible,
+// and renaming them would orphan every project already saved in a profile.
 const KEY = 'sift.projects';
 
 export const newId = () => crypto.randomUUID();
