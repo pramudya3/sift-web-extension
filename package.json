@@ -1,0 +1,15 @@
+{
+  "name": "sift-web-extension",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "test": "node extension/test/store.test.mjs",
+    "check": "python3 tools/contrast.py",
+    "bench": "node tools/bench.mjs",
+    "icons": "python3 tools/make-icons.py",
+    "shots": "bash tools/shot.sh light && bash tools/shot.sh dark && bash tools/shot.sh light save",
+    "pack": "bash tools/pack.sh",
+    "bump": "node tools/version.mjs",
+    "release": "bash tools/release.sh"
+  }
+}

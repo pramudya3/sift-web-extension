@@ -1,10 +1,5 @@
 {
   "name": "sift-extension",
   "private": true,
-  "type": "module",
-  "scripts": {
-    "test": "node test/store.test.mjs",
-    "icons": "python3 ../tools/make-icons.py",
-    "pack": "bash ../tools/pack.sh"
-  }
+  "type": "module"
 }

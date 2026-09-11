@@ -2,7 +2,7 @@
 
 **Close your tabs. Keep your research.**
 
-A Chrome extension that turns a window full of tabs into a resumable research project.
+A Chromium extension that turns a window full of tabs into a resumable research project.
 Not a tab manager — a memory layer. Save the window, close the tabs without anxiety,
 come back in one click.
 
@@ -12,6 +12,23 @@ Research → Save as Project → Close tabs → Resume in 1 click
 
 Local-first: no backend, no account, no AI, no network calls. The whole thing is
 ~600 lines of plain JavaScript, loads unpacked with zero build step.
+
+Works on any Chromium browser 114+: **Chrome, Brave, Edge, Opera, Vivaldi** (built and
+tested on Chrome and Brave). Firefox and Safari are out of scope — the side panel and
+tab-group APIs are Chromium-only.
+
+## Install (no clone needed)
+
+**[Download the latest release →](https://github.com/pramudya3/sift-web-extension/releases/latest)**
+
+1. Unzip the download
+2. `chrome://extensions` — or `brave://extensions`, `edge://extensions`
+3. Turn on **Developer mode**
+4. **Load unpacked** → pick the unzipped folder
+
+Updating = download the newer zip, unzip over the same folder, then ⟳ and reopen the
+side panel. Your projects live in `chrome.storage.local`, not in the folder, so they
+survive.
 
 | Project list | Save a window — pick what to keep | Dark mode |
 |---|---|---|
@@ -56,12 +73,15 @@ tools/
   shot.sh             headless screenshots of the UI
   preview.html        design harness — real CSS, mock content
   pack.sh             builds dist/sift-extension-v<version>.zip
+  release.sh          bump + check + tag + publish the zip as a GitHub release
+  version.mjs         bumps the version everywhere it appears
+  bench.mjs           hot-path timings
 ```
 
 Product strategy notes (spec, ICP, pricing, roadmap) are kept locally in `notes/`,
 which is git-ignored — this repo is the code.
 
-## Run it
+## Run it from source
 
 1. `chrome://extensions` → enable **Developer mode**
 2. **Load unpacked** → select the `extension/` folder
@@ -75,15 +95,19 @@ which build is live.
 ## Develop
 
 ```bash
-cd extension
-node test/store.test.mjs        # rule logic: naming, grouping, stats
-python3 ../tools/contrast.py    # WCAG AA, dark-theme completeness, class + listener coverage
-python3 ../tools/make-icons.py  # regenerate icons
-bash ../tools/shot.sh light     # → docs/preview-light.png (README screenshots)
-bash ../tools/shot.sh dark      # → docs/preview-dark.png
-bash ../tools/shot.sh light save # → docs/preview-light-save.png (save form + picker)
-bash ../tools/pack.sh           # → dist/sift-extension-v0.9.0.zip
+npm test                    # rule logic: naming, grouping, picker defaults
+npm run check               # WCAG AA, theme completeness, class/listener coverage, scales
+npm run bench               # hot-path timings on synthetic libraries
+npm run shots               # → docs/preview-*.png (the screenshots above)
+npm run pack                # → dist/sift-extension-v<version>.zip
+npm run release -- minor    # bump, check, screenshot, pack, tag, push, publish
 ```
+
+`npm run release` is the whole release: it bumps the version everywhere it appears
+(manifest, preview chip, README), runs the tests and design guards, builds the zip,
+commits, tags `v<version>`, pushes, and publishes a GitHub release with the zip
+attached — which is what the **Install** link above points at. Use
+`npm run release -- 0.14.0` to publish a version without bumping it.
 
 `tools/preview.html` renders the real `sidepanel.css` with mock projects, so UI changes
 can be reviewed in a normal tab instead of reloading the extension. `tools/contrast.py`
