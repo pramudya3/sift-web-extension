@@ -306,14 +306,37 @@ async function onProjectClick(event) {
   if (action === 'resume') {
     const project = projects.find((p) => p.id === id);
     if (!project) return;
-    const win = await chrome.windows.create({ url: project.tabs.map((t) => t.url), focused: true });
-    const grouped = settings.groupByDomain ? await applyGroups(win.id, project.tabs) : { made: 0, errors: [] };
+
+    const urls = project.tabs.map((t) => t.url);
+    // always a NEW window: one project = one window, closable as a unit
+    const win = await chrome.windows.create({ url: urls, focused: true });
+    if (win?.id === undefined) {
+      status('Resume failed: Chrome did not report the new window.');
+      return;
+    }
+
+    const grouped = settings.groupByDomain
+      ? await applyGroups(win.id, project.tabs)
+      : { made: 0, errors: [] };
+
+    const placed = await chrome.tabs.query({ windowId: win.id });
+    console.info(
+      `Sift resume: newWindow=${win.id} urls=${urls.length} tabsInWindow=${placed.length} groups=${grouped.made}` +
+        (grouped.errors.length ? ` errors=${grouped.errors.join('; ')}` : ''),
+    );
+
     project.lastActiveAt = Date.now();
     await saveProjects(projects);
     render();
+
+    const problems = [...grouped.errors];
+    if (placed.length !== urls.length) {
+      problems.push(`${placed.length} of ${urls.length} tabs landed in the new window`);
+    }
     status(
-      `Resumed “${project.name}”${grouped.made ? ` in ${grouped.made} tab groups` : ''}` +
-        (grouped.errors.length ? ` — grouping failed: ${grouped.errors[0]}` : '.') ,
+      problems.length
+        ? `Resumed “${project.name}” in a new window — ${problems[0]}`
+        : `Resumed “${project.name}” in a new window${grouped.made ? `, ${grouped.made} tab groups` : ''}.`,
     );
     return;
   }
@@ -363,15 +386,21 @@ async function waitForUrls(windowId, timeoutMs = 2500) {
 }
 
 // groups: [{ title, color?, tabIds }] — returns what actually happened, never throws.
-async function groupTabs(groups) {
+// windowId is passed explicitly: without it Chrome infers the window from the tabs,
+// which is how a resume could quietly group tabs somewhere other than the new window.
+async function groupTabs(windowId, groups) {
   let made = 0;
   const errors = [];
 
+  const live = new Set((await chrome.tabs.query({ windowId })).map((t) => t.id));
+
   for (const [index, group] of groups.entries()) {
-    const tabIds = group.tabIds.filter((id) => id !== undefined);
+    const tabIds = group.tabIds.filter((id) => id !== undefined && live.has(id));
     if (!tabIds.length) continue;
     try {
-      const groupId = await withRetry(() => chrome.tabs.group({ tabIds }));
+      const groupId = await withRetry(() =>
+        chrome.tabs.group({ tabIds, createProperties: { windowId } }),
+      );
       await chrome.tabGroups.update(groupId, {
         title: group.title,
         color: group.color ?? GROUP_COLORS[index % GROUP_COLORS.length],
@@ -395,12 +424,20 @@ async function groupWindowByDomain(windowId) {
   ).map((group) => ({ title: group.domain, tabIds: group.tabs.map((t) => t.id) }));
 
   if (groups.length < 2) return { made: 0, errors: [] }; // one domain: nothing to group
-  return groupTabs(groups);
+  return groupTabs(windowId, groups);
 }
 
 // Resumed window → rebuild the groups the project was saved with.
 async function applyGroups(windowId, savedTabs) {
   const live = await waitForUrls(windowId);
+  if (!live.length) return { made: 0, errors: ['the new window reported no tabs'] };
+
+  // a mismatch means indices may not line up — still group best effort, but say so
+  const notes =
+    live.length === savedTabs.length
+      ? []
+      : [`new window holds ${live.length} of ${savedTabs.length} tabs`];
+
   const groups = planGroups(savedTabs)
     .map((group) => ({
       ...group,
@@ -408,8 +445,9 @@ async function applyGroups(windowId, savedTabs) {
     }))
     .filter((group) => group.tabIds.length);
 
-  if (groups.length < 2) return { made: 0, errors: [] };
-  return groupTabs(groups);
+  if (groups.length < 2) return { made: 0, errors: notes };
+  const result = await groupTabs(windowId, groups);
+  return { made: result.made, errors: [...notes, ...result.errors] };
 }
 
 async function currentWindowId() {

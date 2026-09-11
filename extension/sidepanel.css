@@ -14,6 +14,13 @@
   --focus: #2b2bff;
   --hard: 3px 3px 0 var(--ink);
   --hard-sm: 2px 2px 0 var(--ink);
+  /* one scale, six steps — every font-size below reads from here */
+  --fs-micro: 10px;  /* labels, meta, stats, note, toast, chips */
+  --fs-button: 11px; /* buttons and the toggle label (uppercase reads larger) */
+  --fs-row: 12px;    /* tab rows inside a project */
+  --fs-body: 13px;   /* body copy and project titles */
+  --fs-input: 14px;  /* field values — never inherit, fields get their own size */
+  --fs-title: 15px;  /* panel title */
 }
 
 /* Theme is explicit, not OS-driven: light is the default, the header button switches.
@@ -53,7 +60,9 @@ body {
   margin: 0;
   background: var(--bg);
   color: var(--fg);
-  font: 13px/1.4 -apple-system, BlinkMacSystemFont, "Segoe UI", system-ui, sans-serif;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", system-ui, sans-serif;
+  font-size: var(--fs-body);
+  line-height: 1.4;
   display: flex;
   flex-direction: column;
   gap: 12px;
@@ -74,7 +83,7 @@ h1 {
   display: flex;
   align-items: center;
   gap: 6px;
-  font-size: 15px;
+  font-size: var(--fs-title);
   font-weight: 800;
   text-transform: uppercase;
   letter-spacing: -0.01em;
@@ -82,7 +91,7 @@ h1 {
 
 .ver {
   padding: 1px 5px;
-  font-size: 9px;
+  font-size: var(--fs-micro);
   font-weight: 800;
   text-transform: none;
   letter-spacing: 0.02em;
@@ -97,7 +106,7 @@ h1 {
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
-  font-size: 10px;
+  font-size: var(--fs-micro);
   font-weight: 700;
   letter-spacing: 0.02em;
   color: var(--muted);
@@ -110,7 +119,7 @@ button.theme {
   width: 30px;
   height: 30px;
   padding: 0;
-  font-size: 14px;
+  font-size: var(--fs-input);
   line-height: 1;
 }
 
@@ -118,7 +127,7 @@ button.theme {
 
 button {
   font: inherit;
-  font-size: 11px;
+  font-size: var(--fs-button);
   font-weight: 700;
   text-transform: uppercase;
   letter-spacing: 0.03em;
@@ -177,14 +186,14 @@ button.cyan:hover:not(:disabled) {
 }
 
 button.small {
-  font-size: 10px;
+  font-size: var(--fs-micro);
   padding: 5px 8px;
 }
 
 button.wide {
   width: 100%;
   padding: 11px;
-  font-size: 12px;
+  font-size: var(--fs-row);
   box-shadow: var(--hard);
 }
 
@@ -204,7 +213,7 @@ button.wide {
   display: flex;
   flex-direction: column;
   gap: 5px;
-  font-size: 10px;
+  font-size: var(--fs-micro);
   font-weight: 700;
   text-transform: uppercase;
   letter-spacing: 0.04em;
@@ -226,7 +235,7 @@ button.wide {
 
 .row button {
   padding: 7px 8px;
-  font-size: 10px;
+  font-size: var(--fs-micro);
   white-space: nowrap;
 }
 
@@ -235,6 +244,7 @@ button.wide {
 input[type="text"],
 input[type="search"] {
   font: inherit;
+  font-size: var(--fs-input);
   font-weight: 600;
   width: 100%;
   padding: 9px 10px;
@@ -255,7 +265,7 @@ input::placeholder {
   display: flex;
   align-items: center;
   gap: 8px;
-  font-size: 11px;
+  font-size: var(--fs-button);
   font-weight: 700;
   text-transform: uppercase;
   letter-spacing: 0.03em;
@@ -347,7 +357,7 @@ input::placeholder {
   transform: translateY(-50%);
   padding: 1px 5px;
   font: inherit;
-  font-size: 10px;
+  font-size: var(--fs-micro);
   font-weight: 800;
   color: var(--primary-fg);
   background: var(--primary);
@@ -396,7 +406,7 @@ input::placeholder {
   box-shadow: none;
   background: none;
   text-transform: none;
-  font-size: 13px;
+  font-size: var(--fs-body);
   font-weight: 800;
   letter-spacing: -0.01em;
   text-align: left;
@@ -417,7 +427,7 @@ input::placeholder {
 }
 
 .meta {
-  font-size: 10px;
+  font-size: var(--fs-micro);
   font-weight: 700;
   letter-spacing: 0.01em;
   color: var(--muted);
@@ -462,7 +472,7 @@ button.delete:hover:not(:disabled) {
   align-items: center;
   gap: 6px;
   margin-bottom: 2px;
-  font-size: 10px;
+  font-size: var(--fs-micro);
   font-weight: 800;
   text-transform: uppercase;
   letter-spacing: 0.06em;
@@ -483,7 +493,7 @@ button.delete:hover:not(:disabled) {
   gap: 7px;
   width: 100%;
   padding: 5px;
-  font-size: 12px;
+  font-size: var(--fs-row);
   font-weight: 500;
   text-transform: none;
   letter-spacing: 0;
@@ -519,7 +529,7 @@ button.delete:hover:not(:disabled) {
   margin: 10px 0;
   padding: 20px 12px;
   text-align: center;
-  font-size: 11px;
+  font-size: var(--fs-button);
   font-weight: 700;
   text-transform: uppercase;
   letter-spacing: 0.03em;
@@ -540,7 +550,7 @@ button.delete:hover:not(:disabled) {
 .note {
   margin-left: auto;
   max-width: 55%;
-  font-size: 10px;
+  font-size: var(--fs-micro);
   font-weight: 600;
   line-height: 1.25;
   color: var(--muted);
@@ -554,7 +564,7 @@ button.delete:hover:not(:disabled) {
   bottom: 52px;
   margin: 0;
   padding: 10px 12px;
-  font-size: 10px;
+  font-size: var(--fs-micro);
   font-weight: 800;
   text-transform: uppercase;
   letter-spacing: 0.03em;
