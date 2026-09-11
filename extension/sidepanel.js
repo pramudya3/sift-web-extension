@@ -59,7 +59,7 @@ async function init() {
   });
 
   for (const event of ['onCreated', 'onRemoved', 'onUpdated']) {
-    chrome.tabs[event].addListener(refreshSaveButton);
+    chrome.tabs[event].addListener(scheduleRefresh);
   }
 
   render();
@@ -99,9 +99,21 @@ async function refreshSaveButton() {
   if (candidate) return;
 
   const tabs = await siftableTabs();
+  if (tabs.length === lastTabCount) return; // label only depends on the count
+  lastTabCount = tabs.length;
+
   const btn = $('save-btn');
   btn.textContent = tabs.length ? `Sift this window (${tabs.length} tabs)` : 'Nothing to sift in this window';
   btn.disabled = tabs.length === 0;
+}
+
+// onUpdated fires several times per page load (status, title, favicon), so a burst of
+// 20 loading tabs would otherwise mean 60-100 tabs.query round trips.
+let refreshTimer;
+let lastTabCount = -1;
+function scheduleRefresh() {
+  clearTimeout(refreshTimer);
+  refreshTimer = setTimeout(refreshSaveButton, 150);
 }
 
 async function beginSave() {
@@ -255,7 +267,7 @@ function projectCard(project) {
           title: tab.url,
           dataset: { action: 'open', url: tab.url },
         });
-        if (tab.favicon) row.append(el('img', { src: tab.favicon, alt: '', loading: 'lazy' }));
+        row.append(el('img', { src: faviconUrl(tab.url), alt: '', loading: 'lazy' }));
         row.append(el('span', { textContent: tab.title }));
         section.append(row);
       }
@@ -513,6 +525,14 @@ async function importAll(event) {
   } catch {
     status('Import failed — that is not a Sift export file.');
   }
+}
+
+/* ---------- rendering helpers ---------- */
+
+// Chrome's own favicon cache — local, no request to the site, no third party.
+// ponytail: favicon permission + a cached lookup beats storing (and re-fetching) icon urls.
+function faviconUrl(pageUrl) {
+  return chrome.runtime.getURL(`/_favicon/?pageUrl=${encodeURIComponent(pageUrl)}&size=32`);
 }
 
 /* ---------- tiny DOM helper (textContent only, never innerHTML: titles are untrusted) ---------- */

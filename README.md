@@ -97,9 +97,10 @@ and gaps `2 / 6 / 8 / 12px`, both declared once in `:root`.
 
 ## Privacy
 
-Permissions are `tabs`, `storage`, `sidePanel`, `tabGroups` — no host permissions.
-Nothing is sent anywhere: projects live in `chrome.storage.local`, and the only
-network activity is the favicons Chrome already has for your open tabs.
+Permissions are `tabs`, `storage`, `sidePanel`, `tabGroups`, `favicon` — no host
+permissions. Nothing is sent anywhere: projects live in `chrome.storage.local`, and
+tab icons are read from Chrome's local favicon cache (`/_favicon/`), so expanding a
+project makes zero network requests.
 
 ## License
 

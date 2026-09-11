@@ -59,6 +59,7 @@ assert.equal(plan[1].color, undefined);
 const kept = tabFromChrome({ url: 'https://a.com/x', title: 'A' }, { title: 'Research', color: 'blue' });
 assert.deepEqual(kept.group, { title: 'Research', color: 'blue' });
 assert.equal(kept.domain, 'a.com');
+assert.equal('favicon' in kept, false, 'favicons come from chrome\'s cache, not storage');
 assert.equal('group' in tabFromChrome({ url: 'https://a.com/x', title: 'A' }), false);
 
 console.log('store.js ok');

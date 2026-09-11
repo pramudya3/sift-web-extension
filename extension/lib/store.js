@@ -29,7 +29,6 @@ export function tabFromChrome(tab, group) {
   return {
     url: tab.url,
     title: tab.title || tab.url,
-    favicon: tab.favIconUrl,
     domain: domainOf(tab.url),
     // remember the tab group the user actually had, so a resume can rebuild it
     ...(group?.title ? { group: { title: group.title, color: group.color } } : {}),
