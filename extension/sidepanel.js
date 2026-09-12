@@ -12,6 +12,7 @@ import {
   domainOf,
   loadSettings,
   saveSettings,
+  mergeTabs,
 } from './lib/store.js';
 
 const $ = (id) => document.getElementById(id);
@@ -22,6 +23,9 @@ let candidate = null; // chrome tabs offered by the save form's picker
 let pickedIds = new Set(); // which of them are checked
 let selectionCount = 0; // how many tabs are multi-selected in this window (0 = none)
 let confirmDeleteId = null;
+let addingToId = null; // project id currently showing the "add tabs" picker
+let addCandidate = null; // chrome tabs offered to the add picker
+let addPicked = new Set();
 const expanded = new Set(); // ephemeral UI state, fine to lose on panel reload
 
 // apply the default theme synchronously so the panel never flashes the wrong one
@@ -55,6 +59,10 @@ async function init() {
     if (e.key === 'Escape') cancelSave();
   });
   document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape' && addingToId) {
+      cancelAdd();
+      return;
+    }
     if (e.key !== '/' || e.metaKey || e.ctrlKey) return;
     if (['INPUT', 'TEXTAREA'].includes(document.activeElement?.tagName)) return;
     e.preventDefault();
@@ -282,6 +290,75 @@ function status(message) {
   statusTimer = setTimeout(() => (toast.hidden = true), 4200);
 }
 
+/* ---------- add to existing project ---------- */
+
+function updateAddLabels() {
+  const btn = document.querySelector('[data-action="add-save"]');
+  if (btn) {
+    btn.textContent = `Save ${addPicked.size} tabs`;
+    btn.disabled = addPicked.size === 0;
+  }
+}
+
+async function beginAdd(projectId) {
+  const tabs = await siftableTabs();
+  if (!tabs.length) {
+    status('Nothing to add — no tabs in this window.');
+    return;
+  }
+  const project = projects.find((p) => p.id === projectId);
+  if (!project) return;
+
+  const selectedIds = (await selectedSiftableTabs()).map((t) => t.id);
+  addCandidate = tabs;
+  addPicked = defaultPick(tabs, selectedIds);
+  // deselect tabs already in the project so the default isn't "already saved"
+  const existing = new Set(project.tabs.map((t) => t.url));
+  for (const t of tabs) if (existing.has(t.url)) addPicked.delete(t.id);
+
+  addingToId = projectId;
+  expanded.add(projectId);
+  renderProjects();
+}
+
+function cancelAdd() {
+  addingToId = null;
+  addCandidate = null;
+  addPicked = new Set();
+  renderProjects();
+}
+
+async function commitAdd() {
+  if (!addingToId || !addCandidate) return;
+  const project = projects.find((p) => p.id === addingToId);
+  if (!project) {
+    cancelAdd();
+    return;
+  }
+  const chosenChromeTabs = addCandidate.filter((t) => addPicked.has(t.id));
+  if (!chosenChromeTabs.length) {
+    status('Pick at least one tab to add.');
+    return;
+  }
+  const incoming = await captureTabs(chosenChromeTabs);
+  const { tabs: merged, added, skipped } = mergeTabs(project.tabs, incoming);
+  if (added === 0) {
+    status('All selected tabs are already in that project.');
+    return;
+  }
+
+  project.tabs = merged;
+  project.lastActiveAt = Date.now();
+  await saveProjects(projects);
+
+  const name = project.name;
+  addingToId = null;
+  addCandidate = null;
+  addPicked = new Set();
+  render();
+  status(`Added ${added} tab${added === 1 ? '' : 's'} to “${name}”${skipped ? ` (${skipped} already there)` : ''}.`);
+}
+
 /* ---------- projects ---------- */
 
 function visibleProjects() {
@@ -335,6 +412,11 @@ function projectCard(project) {
       dataset: { action: 'resume', id: project.id },
     }),
     el('button', {
+      className: 'small',
+      textContent: 'Add tabs',
+      dataset: { action: 'add', id: project.id },
+    }),
+    el('button', {
       className: armed ? 'small armed' : 'small delete',
       textContent: armed ? 'Delete?' : 'Delete',
       dataset: { action: 'delete', id: project.id },
@@ -347,22 +429,41 @@ function projectCard(project) {
   if (expanded.has(project.id)) {
     const body = el('div', { className: 'card-body' });
 
-    for (const group of groupByDomain(project.tabs)) {
-      const section = el('div', { className: 'domain-group' });
-      section.append(
-        el('div', { className: 'domain', textContent: `${group.domain} · ${group.tabs.length}` }),
-      );
-      for (const tab of group.tabs) {
-        const row = el('button', {
-          className: 'tab',
-          title: tab.url,
-          dataset: { action: 'open', url: tab.url },
-        });
-        row.append(el('img', { src: faviconUrl(tab.url), alt: '', loading: 'lazy' }));
-        row.append(el('span', { textContent: tab.title }));
-        section.append(row);
+    // add-to-project takes over the body when active for this card
+    if (addingToId === project.id && addCandidate) {
+      const pickerEl = el('div', { className: 'picker' });
+      renderPicker(pickerEl, addCandidate, addPicked, updateAddLabels);
+      const row = el('div', { className: 'row' });
+      const btnSave = el('button', {
+        className: 'primary',
+        textContent: `Save ${addPicked.size} tabs`,
+        dataset: { action: 'add-save', id: project.id },
+      });
+      btnSave.disabled = addPicked.size === 0;
+      const btnCancel = el('button', {
+        textContent: 'Cancel',
+        dataset: { action: 'add-cancel', id: project.id },
+      });
+      row.append(btnSave, btnCancel);
+      body.append(pickerEl, row);
+    } else {
+      for (const group of groupByDomain(project.tabs)) {
+        const section = el('div', { className: 'domain-group' });
+        section.append(
+          el('div', { className: 'domain', textContent: `${group.domain} · ${group.tabs.length}` }),
+        );
+        for (const tab of group.tabs) {
+          const row = el('button', {
+            className: 'tab',
+            title: tab.url,
+            dataset: { action: 'open', url: tab.url },
+          });
+          row.append(el('img', { src: faviconUrl(tab.url), alt: '', loading: 'lazy' }));
+          row.append(el('span', { textContent: tab.title }));
+          section.append(row);
+        }
+        body.append(section);
       }
-      body.append(section);
     }
     card.append(body);
   }
@@ -385,9 +486,31 @@ async function onProjectClick(event) {
   const { id, url } = target.dataset;
 
   if (action === 'toggle') {
-    if (expanded.has(id)) expanded.delete(id);
-    else expanded.add(id);
+    const wasExpanded = expanded.has(id);
+    if (wasExpanded) {
+      expanded.delete(id);
+      if (addingToId === id) {
+        addingToId = null;
+        addCandidate = null;
+        addPicked = new Set();
+      }
+    } else {
+      expanded.add(id);
+    }
     renderProjects();
+    return;
+  }
+
+  if (action === 'add') {
+    await beginAdd(id);
+    return;
+  }
+  if (action === 'add-cancel') {
+    cancelAdd();
+    return;
+  }
+  if (action === 'add-save') {
+    await commitAdd();
     return;
   }
 
@@ -455,6 +578,12 @@ async function onProjectClick(event) {
     }
     projects = projects.filter((p) => p.id !== id);
     confirmDeleteId = null;
+    // if deleted project was being added to, clear add state
+    if (addingToId === id) {
+      addingToId = null;
+      addCandidate = null;
+      addPicked = new Set();
+    }
     await saveProjects(projects);
     render();
   }

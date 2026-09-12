@@ -110,3 +110,18 @@ export function formatAgo(ts) {
   if (s < 604800) return `${Math.floor(s / 86400)}d ago`;
   return `${Math.floor(s / 604800)}w ago`;
 }
+
+export function mergeTabs(existing, incoming) {
+  const seen = new Set(existing.map((t) => t.url));
+  const added = [];
+  let skipped = 0;
+  for (const tab of incoming) {
+    if (seen.has(tab.url)) {
+      skipped++;
+      continue;
+    }
+    seen.add(tab.url);
+    added.push(tab);
+  }
+  return { tabs: [...existing, ...added], added: added.length, skipped, addedTabs: added };
+}

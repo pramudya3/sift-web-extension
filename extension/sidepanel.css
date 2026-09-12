@@ -526,6 +526,16 @@ button.delete:hover:not(:disabled) {
   overflow-y: auto;
 }
 
+/* add-mode: Save/Cancel stays fixed, tabs scroll */
+.card-body .row {
+  position: sticky;
+  bottom: 0;
+  background: var(--surface);
+  padding-top: var(--gap-tight);
+  border-top: 2px solid var(--ink);
+  z-index: 1;
+}
+
 .domain-group {
   display: flex;
   flex-direction: column;

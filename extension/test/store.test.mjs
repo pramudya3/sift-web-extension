@@ -10,6 +10,7 @@ import {
   defaultPick,
   tabFromChrome,
   formatAgo,
+  mergeTabs,
 } from '../lib/store.js';
 
 const tabs = (urls) => urls.map((url, i) => ({ url, domain: domainOf(url), title: `t${i}` }));
@@ -73,5 +74,22 @@ assert.deepEqual([...defaultPick(window1)], [2, 3]);
 assert.deepEqual([...defaultPick(window1, [1, 3])], [1, 3], 'explicit multi-select wins');
 assert.deepEqual([...defaultPick(window1, [3])], [2, 3], 'one tab is just the active tab');
 assert.deepEqual([...defaultPick(window1, [99])], [2, 3], 'unknown ids ignored');
+
+// mergeTabs: dedupes by url, preserves order, reports counts
+const existing = tabs(['https://a.com/1', 'https://b.com/1']);
+const incoming = tabs(['https://b.com/1', 'https://c.com/1', 'https://c.com/1']);
+const m1 = mergeTabs(existing, incoming);
+assert.deepEqual(m1.tabs.map((t) => t.url), ['https://a.com/1', 'https://b.com/1', 'https://c.com/1']);
+assert.equal(m1.added, 1);
+assert.equal(m1.skipped, 2, 'duplicate url and intra-incoming duplicate both skipped');
+// empty incoming
+const m2 = mergeTabs(existing, []);
+assert.equal(m2.added, 0);
+assert.equal(m2.skipped, 0);
+assert.deepEqual(m2.tabs.map((t) => t.url), existing.map((t) => t.url));
+// all new
+const m3 = mergeTabs([], tabs(['https://x.com/1', 'https://y.com/1']));
+assert.equal(m3.added, 2);
+assert.equal(m3.skipped, 0);
 
 console.log('store.js ok');

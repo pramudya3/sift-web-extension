@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
-  "name": "Tabrary v0.15.0 (dev)",
-  "version": "0.15.0",
+  "name": "Tabrary v0.16.0 (dev)",
+  "version": "0.16.0",
   "description": "Close your tabs. Keep your research.",
   "minimum_chrome_version": "114",
   "permissions": [
@@ -25,7 +25,7 @@
     "128": "icons/icon128.png"
   },
   "action": {
-    "default_title": "Tabrary \u2014 open side panel",
+    "default_title": "Tabrary — open side panel",
     "default_icon": {
       "16": "icons/icon16.png",
       "32": "icons/icon32.png"
