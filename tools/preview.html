@@ -28,7 +28,10 @@
   <body>
     <header class="head">
       <h1>Tabrary <span class="ver">v0.16.0</span></h1>
-      <button class="theme" type="button">☾</button>
+      <div class="head-actions">
+        <button class="theme" type="button">☾</button>
+        <button id="close" class="theme" type="button" title="Close panel" style="background:var(--danger);color:var(--danger-fg)">✕</button>
+      </div>
     </header>
 
     <section class="actions">
@@ -78,11 +81,44 @@
         <article class="card">
           <div class="card-head">
             <div class="card-text">
+              <button class="card-title">Instagram API research</button>
+              <span class="meta">5 tabs · 20m ago</span>
+            </div>
+            <div class="card-actions">
+              <button class="small cyan">Resume</button>
+              <button class="small">Add tabs</button>
+              <button class="small delete">Delete</button>
+            </div>
+          </div>
+          <div class="card-body">
+            <div class="picker">
+              <div class="picker-head">
+                <span class="picker-count">2 of 5 selected</span>
+                <button class="picker-mini">All</button>
+                <button class="picker-mini">None</button>
+              </div>
+              <div class="picker-list">
+                <label class="picker-row"><input type="checkbox" checked /><img alt="" /><span>Instagram Graph API – docs</span></label>
+                <label class="picker-row"><input type="checkbox" checked /><img alt="" /><span>Webhooks verification guide</span></label>
+                <label class="picker-row"><input type="checkbox" /><img alt="" /><span>Pricing page</span></label>
+                <label class="picker-row"><input type="checkbox" /><img alt="" /><span>Rate limits explained</span></label>
+              </div>
+            </div>
+            <div class="row">
+              <button class="primary">Save 2 tabs</button>
+              <button>Cancel</button>
+            </div>
+          </div>
+        </article>
+        <article class="card">
+          <div class="card-head">
+            <div class="card-text">
               <button class="card-title">Stripe research</button>
               <span class="meta">23 tabs · 2h ago</span>
             </div>
             <div class="card-actions">
               <button class="small cyan">Resume</button>
+              <button class="small">Add tabs</button>
               <button class="small delete">Delete</button>
             </div>
           </div>
@@ -109,6 +145,7 @@
             </div>
             <div class="card-actions">
               <button class="small cyan">Resume</button>
+              <button class="small">Add tabs</button>
               <button class="small armed">Delete?</button>
             </div>
           </div>
@@ -122,6 +159,7 @@
             </div>
             <div class="card-actions">
               <button class="small cyan">Resume</button>
+              <button class="small">Add tabs</button>
               <button class="small delete">Delete</button>
             </div>
           </div>
@@ -140,6 +178,11 @@
     <script>
       const theme = new URLSearchParams(location.search).get('theme') || 'light';
       document.documentElement.dataset.theme = theme;
+
+      // the toast is a live event, not the resting state of the panel — opt in with ?toast=1
+      if (!new URLSearchParams(location.search).has('toast')) {
+        document.querySelector('.toast').hidden = true;
+      }
 
       // ?state=save renders the save form instead of the CTA, like the real panel
       if (new URLSearchParams(location.search).get('state') === 'save') {

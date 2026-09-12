@@ -17,3 +17,6 @@ node_modules/
 
 # local product notes — strategy, not code (not published)
 notes/
+
+# sales docs — launchers, posts, pricing/roadmap (not published)
+sales/

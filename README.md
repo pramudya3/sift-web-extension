@@ -11,11 +11,16 @@ Research → Save as Project → Close tabs → Resume in 1 click
 ```
 
 Local-first: no backend, no account, no AI, no network calls. The whole thing is
-~650 lines of plain JavaScript, loads unpacked with zero build step.
+~700 lines of plain JavaScript, loads unpacked with zero build step.
 
 Works on any Chromium browser 114+: **Chrome, Brave, Edge, Opera, Vivaldi** (built and
 tested on Chrome and Brave). Firefox and Safari are out of scope — the side panel and
 tab-group APIs are Chromium-only.
+
+**[Download the latest release →](https://github.com/pramudya3/tabrary/releases/latest)**
+— 30-second install, no store, no account.
+
+<!-- demo GIF (15s: Save → Close → Resume) goes here: ![Tabrary demo](docs/demo.gif) -->
 
 ## Install (no clone needed)
 
@@ -30,22 +35,31 @@ Updating = download the newer zip, unzip over the same folder, then ⟳ and reop
 side panel. Your projects live in `chrome.storage.local`, not in the folder, so they
 survive.
 
-| Project list | Save a window — pick what to keep | Dark mode |
+**Why isn't this on the Chrome Web Store?** Not there yet — it is pre-validation, so
+the unpacked install keeps it free and instantly iterable. Nothing auto-updates behind
+your back; you choose when to pull a new zip.
+
+**Is it safe?** Permissions are `tabs`, `storage`, `sidePanel`, `tabGroups`, `favicon`
+and there are **no host permissions**, so the extension has no server to talk to. You can
+read all of it in `extension/` — and DevTools shows zero network requests.
+
+| Project list — every row is a resumable window, and `Add tabs` feeds the current window into one | Save a window — pick what to keep | Dark mode |
 |---|---|---|
-| ![Tabrary side panel listing saved research projects](docs/preview-light.png) | ![Tabrary save form: project name, tab picker with checkboxes, save and close](docs/preview-light-save.png) | ![Tabrary side panel in dark mode](docs/preview-dark.png) |
+| ![Tabrary side panel: saved research projects with resume and add-tabs actions](docs/preview-light.png) | ![Tabrary save form: project name, tab picker with checkboxes, save and close](docs/preview-light-save.png) | ![Tabrary side panel in dark mode](docs/preview-dark.png) |
 
 Rendered from the real `extension/sidepanel.css` by `tools/shot.sh` — the same markup
 the panel builds, so these cannot drift from the shipped UI without a check failing.
 
 ## Status
 
-`v0.9.0` — local MVP, pre-store. Three features only:
+`v0.16.0` — local MVP, pre-store. A small surface, on purpose:
 
 | Feature | Notes |
 |---|---|
 | Save window as project | rule-based name suggestion (`Stripe research`), editable |
 | Pick which tabs to save | opening *Save this window* shows the tab list with checkboxes — All / None, a live count, pinned tabs unchecked by default. ⌘/Ctrl-click tabs first and that selection is the starting point |
 | Save + close tabs | closes only the tabs that were saved and are still open |
+| Add tabs to an existing project | `Add tabs` sits in the card header (no scrolling to find it), picker reuses the same list, tabs already in the project start unchecked, duplicates are skipped by URL, and `Save`/`Cancel` stay fixed while the list scrolls |
 | List / search / resume / delete | `Resume` opens the project in a new window, in saved order |
 | Click a saved tab | jumps to that tab if it is already open (same window first), otherwise opens it — no duplicates |
 | Group by domain | one switch: groups the current window now, and every resume after |
@@ -53,6 +67,7 @@ the panel builds, so these cannot drift from the shipped UI without a check fail
 | Pinned tabs are left alone | Chrome refuses to mix pinned and unpinned tabs in one group, so Tabrary never touches them |
 | Export / import JSON | free on purpose — backup is trust, not an upsell |
 | Theme toggle | header button, light by default, saved locally |
+| Close panel | red ✕ in the header, alongside the theme toggle |
 
 Explicitly **not** built: backend, sync, AI, dashboard, team sharing, Firefox/Safari.
 The MVP is deliberately three features so the core loop can be validated before
@@ -62,7 +77,7 @@ anything with a server bill gets written.
 
 ```
 extension/          the unpacked Chrome extension (MV3, no build step)
-  manifest.json       permissions: tabs, storage, sidePanel, tabGroups
+  manifest.json       permissions: tabs, storage, sidePanel, tabGroups, favicon
   sidepanel.html/.js/.css   the whole UI + logic
   lib/store.js        storage + pure rule logic (naming, grouping, stats)
   test/store.test.mjs
@@ -123,7 +138,7 @@ uppercase micro-labels. Light is the default theme; dark inverts the outline
 (`--ink` goes light) so the same hard-shadow language works on a dark surface.
 
 Two enforced scales keep it from drifting: font sizes `10 / 11 / 12 / 13 / 14 / 15px`
-and gaps `2 / 6 / 8 / 12px`, both declared once in `:root`.
+and gaps `2 / 4 / 6 / 8 / 12px`, both declared once in `:root`.
 
 ## Privacy
 
