@@ -23,6 +23,7 @@
   --fs-name: 15px;  /* panel title and project names */
   /* one spacing scale — every gap below reads from here */
   --gap-micro: 2px;  /* inside a dense group (title + meta, tabs in a domain) */
+  --gap-mini: 4px;   /* paired icon buttons (theme + close) */
   --gap-tight: 6px;  /* related controls (buttons in a row, card actions) */
   --gap: 8px;        /* related elements (form fields, project cards) */
   --gap-loose: 12px; /* between panel sections */
@@ -83,6 +84,16 @@ body {
   gap: var(--gap);
 }
 
+.head-actions {
+  display: flex;
+  gap: var(--gap-mini);
+  margin-left: auto;
+}
+
+.head-actions .theme {
+  margin-left: 0;
+}
+
 h1 {
   margin: 0;
   display: flex;
@@ -113,6 +124,15 @@ button.theme {
   padding: 0;
   font-size: var(--fs-input);
   line-height: 1;
+}
+
+#close {
+  background: var(--danger);
+  color: var(--danger-fg);
+}
+
+#close:hover:not(:disabled) {
+  background: color-mix(in srgb, var(--danger) 85%, var(--surface));
 }
 
 /* ---------- controls ---------- */

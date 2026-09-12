@@ -49,6 +49,7 @@ async function init() {
   $('save-keep').addEventListener('click', () => commitSave(false));
   $('save-close').addEventListener('click', () => commitSave(true));
   $('theme').addEventListener('click', toggleTheme);
+  $('close').addEventListener('click', () => window.close());
   $('search').addEventListener('input', renderProjects);
   $('export').addEventListener('click', exportAll);
   $('import').addEventListener('click', () => $('import-file').click());
